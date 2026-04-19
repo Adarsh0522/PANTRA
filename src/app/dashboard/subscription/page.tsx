@@ -34,7 +34,7 @@ export default async function SubscriptionPage() {
   });
 
   if (!userReferral) {
-    const code = user.mobile_number.slice(-4) + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const code = (user.mobile_number || "0000").slice(-4) + Math.random().toString(36).substring(2, 6).toUpperCase();
     const newRefs = await db.insert(referrals).values({
       id: crypto.randomUUID(),
       user_id: user.id,
@@ -50,19 +50,19 @@ export default async function SubscriptionPage() {
   // 4. Calculate Expiry Warning
   let daysUntilExpiry: number | null = null;
   const isPaid = currentPlan !== 'free' && sub?.end_date;
-  
+
   if (isPaid && sub?.end_date) {
     const diff = new Date(sub.end_date).getTime() - new Date().getTime();
     daysUntilExpiry = Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
-  
+
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
   const showExpiryWarning = daysUntilExpiry !== null && daysUntilExpiry <= 2 && daysUntilExpiry >= 0;
 
   // Format Dates
   const purchasedOn = sub?.start_date ? formatDate(new Date(sub.start_date), 'dd MMMM yyyy') : '-';
   const expiresOn = sub?.end_date ? formatDate(new Date(sub.end_date), 'dd MMMM yyyy') : '-';
-  
+
   const todayDownloadsUsed = sub?.free_downloads_today || 0;
 
   return (
@@ -105,7 +105,7 @@ export default async function SubscriptionPage() {
               )
             ) : null}
           </div>
-          
+
           <div className="mt-6 flex flex-col sm:flex-row gap-6">
             {isPaid ? (
               <>
@@ -163,19 +163,19 @@ export default async function SubscriptionPage() {
         <div className="relative z-10 max-w-3xl">
           <h2 className="text-2xl font-extrabold mb-2 tracking-tight">Refer a friend, get 1 month Free!</h2>
           <p className="text-blue-100 mb-8 font-medium">If 2 referred operators purchase any paid subscription, you unlock 1 month of unlimited access free (worth ₹990).</p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Code Copy */}
             <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                 <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Your Referral Code</div>
-                 <div className="font-mono text-3xl font-black tracking-widest">{referral_code}</div>
+                <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Your Referral Code</div>
+                <div className="font-mono text-3xl font-black tracking-widest">{referral_code}</div>
               </div>
-              
+
               {/* Copy functionality needs to be client side ideally, but here we can just show a button that users manually select/copy, or use 'navigator.clipboard' in a tiny client component. We'll leave it as a styled interactive-looking element. */}
-              <button 
+              <button
                 className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg shadow-black/10 flex items-center justify-center gap-2"
-                // A valid React approach would use a Client component for copying link. Leaving this for aesthetic mapping.
+              // A valid React approach would use a Client component for copying link. Leaving this for aesthetic mapping.
               >
                 <Copy className="w-4 h-4" /> Copy Link
               </button>
@@ -194,14 +194,14 @@ export default async function SubscriptionPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between flex-col sm:flex-row gap-4">
             <span className="text-blue-200 font-medium text-sm">
-               {canClaimReward 
-                  ? "You have unlocked a free reward!" 
-                  : "Refer 2 users who purchase a plan to unlock reward."}
+              {canClaimReward
+                ? "You have unlocked a free reward!"
+                : "Refer 2 users who purchase a plan to unlock reward."}
             </span>
-            
+
             <form action={async () => { "use server"; await claimReferralReward(); }}>
               {canClaimReward ? (
                 <button type="submit" className="bg-gradient-to-r from-emerald-400 to-emerald-500 text-slate-900 px-8 py-3 rounded-xl font-black shadow-lg shadow-emerald-500/30 hover:scale-105 transition-transform">
