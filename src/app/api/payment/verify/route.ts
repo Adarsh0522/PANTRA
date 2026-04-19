@@ -100,8 +100,9 @@ export async function POST(req: Request) {
     const frinextData = await verifyWithFrinext(orderId);
     console.log("VERIFY RESULT:", frinextData);
 
-    if (frinextData?.status === "COMPLETED") {
-      // Update payment status to PAID
+    const apiStatus = frinextData?.status?.toUpperCase();
+
+    if (apiStatus === "COMPLETED" || apiStatus === "SUCCESS") {
       await db
         .update(payments)
         .set({

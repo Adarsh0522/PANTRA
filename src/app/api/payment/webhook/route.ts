@@ -62,8 +62,9 @@ export async function POST(req: Request) {
 
     const verifyData = await verifyRes.json();
 
-    if (verifyData?.status === "COMPLETED") {
-      // Update payment status
+    const apiStatus = verifyData?.status?.toUpperCase();
+
+    if (apiStatus === "COMPLETED" || apiStatus === "SUCCESS") {
       await db
         .update(payments)
         .set({
