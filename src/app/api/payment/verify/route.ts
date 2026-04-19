@@ -130,6 +130,7 @@ export async function POST(req: Request) {
       status: payment.status,
       frinextStatus: frinextData?.status || "UNKNOWN",
       message: "Payment not yet confirmed",
+      FULL_FRINEXT_DATA: frinextData
     });
   } catch (error) {
     console.error("Payment verify error:", error);
@@ -139,3 +140,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
