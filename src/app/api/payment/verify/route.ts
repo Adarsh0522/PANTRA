@@ -98,9 +98,11 @@ export async function POST(req: Request) {
 
     // SECURITY: Verify with Frinext — NEVER trust frontend/webhook alone
     const frinextData = await verifyWithFrinext(orderId);
-    console.log("VERIFY RESULT:", frinextData);
+    // Verify response console madhe paha
+    console.log("VERIFY RESULT:", JSON.stringify(frinextData));
 
-    const apiStatus = frinextData?.status?.toUpperCase();
+    const rawStatus = frinextData?.result?.status || frinextData?.status || "";
+    const apiStatus = String(rawStatus).toUpperCase();
 
     if (apiStatus === "COMPLETED" || apiStatus === "SUCCESS") {
       await db

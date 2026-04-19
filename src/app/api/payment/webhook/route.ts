@@ -62,7 +62,10 @@ export async function POST(req: Request) {
 
     const verifyData = await verifyRes.json();
 
-    const apiStatus = verifyData?.status?.toUpperCase();
+    console.log("VERIFY RESULT:", JSON.stringify(verifyData));
+
+    const rawStatus = verifyData?.result?.status || verifyData?.status || "";
+    const apiStatus = String(rawStatus).toUpperCase();
 
     if (apiStatus === "COMPLETED" || apiStatus === "SUCCESS") {
       await db
