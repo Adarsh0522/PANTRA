@@ -1,0 +1,44 @@
+◇ injected env (4) from .env.local // tip: ⌘ override existing { override: true }
+Connecting to Neon...
+Migrating...
+DrizzleQueryError: Failed query: CREATE SCHEMA IF NOT EXISTS "drizzle"
+params: 
+    at NeonHttpPreparedQuery.queryWithCache (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\pg-core\session.cjs:66:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async migrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\neon-http\migrator.cjs:37:3)
+    at async runMigrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\scripts\migrate.js:12:3) {
+  query: 'CREATE SCHEMA IF NOT EXISTS "drizzle"',
+  params: [],
+  cause: NeonDbError: Error connecting to database: TypeError: fetch failed
+      at mr.execute (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\@neondatabase\serverless\index.js:1294:95)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async NeonHttpPreparedQuery.queryWithCache (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\pg-core\session.cjs:64:16)
+      at async migrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\neon-http\migrator.cjs:37:3)
+      at async runMigrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\scripts\migrate.js:12:3) {
+    severity: undefined,
+    code: undefined,
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined,
+    sourceError: TypeError: fetch failed
+        at node:internal/deps/undici/undici:13510:13
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async mr.execute (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\@neondatabase\serverless\index.js:1294:4)
+        at async NeonHttpPreparedQuery.queryWithCache (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\pg-core\session.cjs:64:16)
+        at async migrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\node_modules\drizzle-orm\neon-http\migrator.cjs:37:3)
+        at async runMigrate (C:\Users\Adarsh\OneDrive\Desktop\Adarsh\PANTRA\scripts\migrate.js:12:3) {
+      [cause]: [Error]
+    }
+  }
+}

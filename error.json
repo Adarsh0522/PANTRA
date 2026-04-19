@@ -1,0 +1,1 @@
+{"error":"Internal Server Error","details":"Failed query: select \"id\", \"mobile_number\", \"role\", \"created_at\" from \"users\" \"users\" where \"users\".\"mobile_number\" = $1 limit $2\nparams: 9324380033,1"}
