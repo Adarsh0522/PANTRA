@@ -5,11 +5,11 @@
 import { db } from "@/db";
 import { download_logs, subscriptions } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import { getPlan, type PlanKey } from "@/lib/plans";
 
 export interface DownloadCheckResult {
   allowed: boolean;
-  reason?: "daily_limit" | "plan_limit";
+  reason?: "daily_limit" | "monthly_limit" | "plan_limit";
   requiresPayment?: {
     amount: number;
     type: "per_form" | "extra_form";
@@ -94,19 +94,29 @@ async function syncUsageDate(sub: any) {
     lastDate.getUTCMonth() !== now.getUTCMonth() || 
     lastDate.getUTCFullYear() !== now.getUTCFullYear();
 
+  const isDifferentMonth = !lastDate || 
+    lastDate.getUTCMonth() !== now.getUTCMonth() || 
+    lastDate.getUTCFullYear() !== now.getUTCFullYear();
+
+  let updateFields: any = {};
+
   if (isDifferentDay) {
-    await db
-      .update(subscriptions)
-      .set({
-        free_downloads_today: 0,
-        watermark_downloads_today: 0,
-        last_usage_date: now,
-      })
-      .where(eq(subscriptions.id, sub.id));
+    updateFields.free_downloads_today = 0;
+    updateFields.watermark_downloads_today = 0;
+    updateFields.last_usage_date = now;
     
     // Refresh sub object for logic
     sub.free_downloads_today = 0;
     sub.watermark_downloads_today = 0;
+  }
+
+  if (isDifferentMonth && sub.plan_type === 'free') {
+    updateFields.downloads_used = 0;
+    sub.downloads_used = 0;
+  }
+
+  if (Object.keys(updateFields).length > 0) {
+    await db.update(subscriptions).set(updateFields).where(eq(subscriptions.id, sub.id));
   }
 }
 
@@ -116,25 +126,29 @@ async function syncUsageDate(sub: any) {
 export async function canUserDownload(userId: string): Promise<DownloadCheckResult> {
   const sub = await getActiveSubscription(userId);
   const planKey: PlanKey = (sub?.plan_type as PlanKey) || "free";
-  const plan = PLANS[planKey] || PLANS.free;
+  const plan = await getPlan(planKey);
 
   if (sub) await syncUsageDate(sub);
 
-  // ── Free Plan: 2 clean / day + 5 watermark / day ──
+  // ── Free Plan: 2 clean / day + 10 clean / month + 5 watermark / day ──
   if (planKey === "free") {
-    const cleanUsed = sub?.free_downloads_today ?? 0;
+    const cleanUsedToday = sub?.free_downloads_today ?? 0;
+    const cleanUsedMonth = sub?.downloads_used ?? 0;
     const watermarkUsed = sub?.watermark_downloads_today ?? 0;
 
-    // Phase 1: Clean downloads (upto 2)
-    if (cleanUsed < plan.dailyLimit) {
+    const monthlyLimit = plan.monthlyLimit || 10;
+
+    // Phase 1: Clean downloads (upto 2 daily AND upto 10 monthly)
+    if (cleanUsedToday < plan.dailyLimit && cleanUsedMonth < monthlyLimit) {
       return { allowed: true, watermark: false };
     }
 
-    // Phase 2: Watermark downloads (upto 5)
+    // Phase 2: Watermark downloads (upto 5 per day)
+    // Only allow watermark if they still have watermark quota left
     if (watermarkUsed < plan.watermarkLimit) {
       return {
         allowed: false, // Return false to trigger the 3-button modal
-        reason: "daily_limit",
+        reason: cleanUsedMonth >= monthlyLimit ? "monthly_limit" : "daily_limit",
         requiresPayment: { amount: 10, type: "per_form" },
         watermark: true,
       };
@@ -143,7 +157,7 @@ export async function canUserDownload(userId: string): Promise<DownloadCheckResu
     // Phase 3: Blocked completely
     return {
       allowed: false,
-      reason: "plan_limit", // This will show "Daily limit reached"
+      reason: cleanUsedMonth >= monthlyLimit ? "monthly_limit" : "daily_limit",
       requiresPayment: { amount: 10, type: "per_form" },
       watermark: true,
     };
@@ -191,19 +205,28 @@ export async function recordDownload(userId: string, panFormId?: string, forcedW
   if (!sub) return;
 
   const planKey = (sub.plan_type as PlanKey) || "free";
+  const plan = await getPlan(planKey);
   const updateData: any = {
     downloads_used: (sub.downloads_used || 0) + 1,
     last_usage_date: new Date(),
   };
 
   if (planKey === "free") {
-    const cleanUsed = sub.free_downloads_today || 0;
+    const cleanUsedToday = sub.free_downloads_today || 0;
+    const cleanUsedMonth = sub.downloads_used || 0;
+    const monthlyLimit = plan.monthlyLimit || 10;
     
-    // If not watermark mode and we have clean quota left
-    if (!forcedWatermark && cleanUsed < (PLANS.free.dailyLimit || 2)) {
-      updateData.free_downloads_today = cleanUsed + 1;
+    // If not watermark mode and we have BOTH daily and monthly clean quota left
+    if (!forcedWatermark && cleanUsedToday < (plan.dailyLimit || 2) && cleanUsedMonth < monthlyLimit) {
+      updateData.free_downloads_today = cleanUsedToday + 1;
+      // Note: updateData.downloads_used is already incremented by 1 globally for ALL downloads above
+      // But wait! If it's a watermark download, does it consume `downloads_used`?
+      // For free plan, let's only increment `downloads_used` if it was a clean download!
     } else {
       updateData.watermark_downloads_today = (sub.watermark_downloads_today || 0) + 1;
+      // If it's a watermark download, we should NOT increment `downloads_used`.
+      // It was already incremented globally above, so we subtract 1 back.
+      updateData.downloads_used = sub.downloads_used || 0;
     }
   }
 

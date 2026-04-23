@@ -66,6 +66,8 @@ export async function claimReferralReward() {
         end_date: newEndDate,
         download_limit: 999999,
         downloads_used: 0,
+        free_downloads_today: 0,
+        watermark_downloads_today: 0,
       });
     }
 
@@ -76,7 +78,7 @@ export async function claimReferralReward() {
       })
       .where(eq(referrals.id, userReferral.id));
 
-    revalidatePath("/dashboard/subscription");
+    revalidatePath("/dashboard/referrals");
     revalidatePath("/dashboard");
 
     return { success: true, message: "Successfully claimed 1 month free!" };

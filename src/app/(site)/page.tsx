@@ -1,7 +1,7 @@
 import Hero from "@/components/Hero";
-import Pricing from "@/components/Pricing";
 import Link from "next/link";
 import { CheckCircle2, FileText, Zap, ShieldCheck, ArrowRight } from "lucide-react";
+import Pricing from "@/components/Pricing";
 
 export default function Home() {
   return (

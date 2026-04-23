@@ -27,7 +27,7 @@ export const panCorrectionObject = z.object({
 
   // Fields (All optional by default, validated conditionally)
   firstName: z.string().optional(),
-  middleName: z.string().optional(),
+  middleName: z.string().min(1, "Middle Name is required").optional(),
   lastName: z.string().optional(),
   gender: z.enum(["MALE", "FEMALE", "TRANSGENDER"]).optional(),
   dob: z.string().optional(),
@@ -57,13 +57,13 @@ export const panCorrectionObject = z.object({
 
   fatherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().optional(),
+    middleName: z.string().min(1, "Middle Name is required"),
     lastName: z.string().optional(),
   }).optional(),
 
   motherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().optional(),
+    middleName: z.string().min(1, "Middle Name is required"),
     lastName: z.string().optional(),
   }).optional(),
 

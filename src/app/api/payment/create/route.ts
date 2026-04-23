@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { plan } = (await req.json()) as { plan: PlanKey };
+    const { plan, returnUrl } = (await req.json()) as { plan: PlanKey, returnUrl?: string };
 
     // Validate plan
     const validPlans: PlanKey[] = ["per_form", "monthly", "quarterly", "yearly"];
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // SECURITY: Amount is ALWAYS derived from backend config, never from frontend.
-    const amount = getPlanAmount(plan);
+    const amount = await getPlanAmount(plan);
     if (amount <= 0) {
       return NextResponse.json({ error: "Invalid plan amount" }, { status: 400 });
     }
@@ -32,7 +32,10 @@ export async function POST(req: Request) {
     const paymentId = crypto.randomUUID();
 
     // Call Frinext create-order API
-    const redirectUrl = `${BASE_URL}/payment-status?order_id=${orderId}`;
+    let redirectUrl = `${BASE_URL}/payment-status?order_id=${orderId}`;
+    if (returnUrl) {
+      redirectUrl += `&return_url=${encodeURIComponent(returnUrl)}`;
+    }
 
     const frinextRes = await fetch("https://frinext.com/api/create-order", {
       method: "POST",

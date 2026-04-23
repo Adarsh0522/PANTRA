@@ -38,14 +38,14 @@ export function CorrectionContactIncomeSection({ register, errors, control, setV
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Foreign Identification (If Any)</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SharedInput 
-            label="Passport Number" 
-            placeholder="For NRIs / Foreign Citizens" 
+            label="PASSPORT NUMBER" 
+            placeholder="A1234567" 
             {...register("passportNumber")} 
             error={errors.passportNumber} 
           />
           <SharedInput 
-            label="Taxpayer Id Number (TIN)" 
-            placeholder="TIN in Country of Residence" 
+            label="TAXPAYER ID NUMBER (TIN)" 
+            placeholder="TIN IN COUNTRY OF RESIDENCE" 
             {...register("tin")} 
             error={errors.tin} 
           />
@@ -59,28 +59,28 @@ export function CorrectionContactIncomeSection({ register, errors, control, setV
           {/* Row 1: Mobile */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="md:col-span-1">
-              <SharedInput label="Country Code" defaultValue="91" {...register("contact.isdCode" as any)} required />
+              <SharedInput label="COUNTRY CODE" defaultValue="91" {...register("contact.isdCode" as any)} required />
             </div>
             <div className="md:col-span-3">
-              <SharedInput label="Mobile Number" placeholder="10 digits" {...register("contact.mobile" as any)} error={errors.contact?.mobile} required />
+              <SharedInput label="MOBILE NUMBER" placeholder="9876543210" maxLength={10} {...register("contact.mobile" as any)} error={errors.contact?.mobile} required />
             </div>
           </div>
 
           {/* Row 2: Email */}
           <div className="w-full">
-            <SharedInput label="Email ID" placeholder="name@example.com" type="email" {...register("contact.email" as any)} error={errors.contact?.email} required />
+            <SharedInput label="EMAIL ID" placeholder="NAME@EXAMPLE.COM" type="email" {...register("contact.email" as any)} error={errors.contact?.email} required />
           </div>
 
           {/* Row 3: Landline */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end pt-4 border-t border-slate-100">
             <div className="md:col-span-1">
-              <SharedInput label="Country/ISD" defaultValue="91" {...register("contact.isdCode" as any)} />
+              <SharedInput label="COUNTRY/ISD" defaultValue="91" {...register("contact.isdCode" as any)} />
             </div>
             <div className="md:col-span-1">
-              <SharedInput label="Area/STD" placeholder="Code" {...register("contact.stdCode" as any)} />
+              <SharedInput label="AREA/STD" placeholder="CODE" {...register("contact.stdCode" as any)} />
             </div>
             <div className="md:col-span-4">
-              <SharedInput label="Landline Number" placeholder="Optional" {...register("contact.landline" as any)} />
+              <SharedInput label="LANDLINE NUMBER" placeholder="OPTIONAL" {...register("contact.landline" as any)} />
             </div>
           </div>
         </div>
@@ -107,17 +107,17 @@ export function CorrectionParentsSection({ register, errors, control, setValue }
         <div className="space-y-4">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Father's Details</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SharedInput label="First Name" {...register("fatherName.firstName")} error={errors.fatherName?.firstName} required />
-              <SharedInput label="Middle Name" {...register("fatherName.middleName")} />
-              <SharedInput label="Last Name" {...register("fatherName.lastName")} error={errors.fatherName?.lastName} required />
+              <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} error={errors.fatherName?.firstName} required />
+              <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} error={errors.fatherName?.middleName} required />
+              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} error={errors.fatherName?.lastName} required />
             </div>
           </div>
         <div className="space-y-4 pt-8 border-t border-slate-100">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Mother's Details</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SharedInput label="First Name" {...register("motherName.firstName")} error={errors.motherName?.firstName} required />
-            <SharedInput label="Middle Name" {...register("motherName.middleName")} />
-            <SharedInput label="Last Name" {...register("motherName.lastName")} error={errors.motherName?.lastName} required />
+            <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} error={errors.motherName?.firstName} required />
+            <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} error={errors.motherName?.middleName} required />
+            <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} error={errors.motherName?.lastName} required />
           </div>
         </div>
       </div>
@@ -170,7 +170,7 @@ export function CorrectionDeclarationSection({ register, errors, control, setVal
       <div className="space-y-6 pt-6 border-t border-slate-100">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Declaration & Verification</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-          <SharedInput label="Verification Place" placeholder="Mumbai" {...register("verification.place")} required />
+          <SharedInput label="VERIFICATION PLACE" placeholder="MUMBAI" {...register("verification.place")} required />
           <div className="px-6 py-3 bg-slate-900 rounded-2xl relative overflow-hidden ring-1 ring-white/10 shadow-lg h-[58px] flex flex-col justify-center">
             <div className="absolute top-0 right-0 p-2 text-[8px] font-bold text-blue-400 uppercase tracking-tighter">Secure Matrix</div>
             <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">Current Date</p>

@@ -41,6 +41,15 @@ body {
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
+/* Hidden scrollbar for sidebar */
+.sidebar-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.sidebar-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
 .glass-pill {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(4px);

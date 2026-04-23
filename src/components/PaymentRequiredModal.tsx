@@ -16,7 +16,7 @@ interface PaymentRequiredModalProps {
   isOpen: boolean;
   onClose: () => void;
   onContinueFree: () => void;
-  reason: "daily_limit" | "plan_limit";
+  reason: "daily_limit" | "monthly_limit" | "plan_limit";
   amount: number;
   paymentType: "per_form" | "extra_form";
   watermarkAvailable?: boolean;
@@ -36,8 +36,19 @@ export default function PaymentRequiredModal({
 
   if (!isOpen) return null;
 
-  const title = "Daily Limit Reached";
-  const description = "You've used your 2 free downloads for today.";
+  let title = "Limit Reached";
+  let description = "You have reached your limit.";
+  
+  if (reason === "daily_limit") {
+    title = "Daily Limit Reached";
+    description = "You've used your 2 free downloads for today.";
+  } else if (reason === "monthly_limit") {
+    title = "Monthly Limit Reached";
+    description = "You've used your 10 free downloads for this month.";
+  } else if (reason === "plan_limit") {
+    title = "Plan Limit Reached";
+    description = "You've exhausted your plan's download limit.";
+  }
 
   async function handlePayPerForm() {
     setLoading(true);
@@ -45,7 +56,10 @@ export default function PaymentRequiredModal({
       const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "per_form" }),
+        body: JSON.stringify({ 
+          plan: "per_form",
+          returnUrl: window.location.pathname
+        }),
       });
 
       const data = await res.json();

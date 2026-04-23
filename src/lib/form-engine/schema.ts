@@ -14,7 +14,7 @@ export const addressSchema = z.object({
 export const panFormObject = z.object({
   // Step 1: Identity
   firstName: z.string().min(1, "First Name is required"),
-  middleName: z.string().optional(),
+  middleName: z.string().min(1, "Middle Name is required"),
   lastName: z.string().min(1, "Last Name is required"),
   gender: z.enum(["MALE", "FEMALE", "TRANSGENDER"], {
     message: "Gender is required",
@@ -53,12 +53,12 @@ export const panFormObject = z.object({
   singleParentType: z.enum(["FATHER", "MOTHER"]).optional(),
   fatherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().optional(),
+    middleName: z.string().min(1, "Middle Name is required"),
     lastName: z.string().optional(),
   }).optional(),
   motherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().optional(),
+    middleName: z.string().min(1, "Middle Name is required"),
     lastName: z.string().optional(),
   }).optional(),
   parentToPrint: z.enum(["FATHER", "MOTHER"]),
@@ -67,7 +67,7 @@ export const panFormObject = z.object({
   hasRA: z.boolean(),
   raDetails: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().optional(),
+    middleName: z.string().min(1, "Middle Name is required"),
     lastName: z.string().optional(),
     pan: z.string().optional(),
     aadhaar: z.string().optional(),
@@ -120,6 +120,9 @@ export const panFormSchema: z.ZodType<PanFormData, any, any> = panFormObject.sup
     if (!ra?.firstName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["raDetails", "firstName"] });
     }
+    if (!ra?.middleName) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["raDetails", "middleName"] });
+    }
     if (!ra?.lastName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required", path: ["raDetails", "lastName"] });
     }
@@ -162,6 +165,9 @@ export const panFormSchema: z.ZodType<PanFormData, any, any> = panFormObject.sup
       if (!data.fatherName?.firstName) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "firstName"], message: "Required" });
       }
+      if (!data.fatherName?.middleName) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "middleName"], message: "Required" });
+      }
       if (!data.fatherName?.lastName) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "lastName"], message: "Required" });
       }
@@ -170,6 +176,9 @@ export const panFormSchema: z.ZodType<PanFormData, any, any> = panFormObject.sup
     if (data.singleParentType === "MOTHER") {
       if (!data.motherName?.firstName) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "firstName"], message: "Required" });
+      }
+      if (!data.motherName?.middleName) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "middleName"], message: "Required" });
       }
       if (!data.motherName?.lastName) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "lastName"], message: "Required" });
@@ -181,11 +190,17 @@ export const panFormSchema: z.ZodType<PanFormData, any, any> = panFormObject.sup
     if (!data.fatherName?.firstName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "firstName"], message: "Required" });
     }
+    if (!data.fatherName?.middleName) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "middleName"], message: "Required" });
+    }
     if (!data.fatherName?.lastName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fatherName", "lastName"], message: "Required" });
     }
     if (!data.motherName?.firstName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "firstName"], message: "Required" });
+    }
+    if (!data.motherName?.middleName) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "middleName"], message: "Required" });
     }
     if (!data.motherName?.lastName) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["motherName", "lastName"], message: "Required" });

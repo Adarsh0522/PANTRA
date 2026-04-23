@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePanCorrectionLogic } from "@/hooks/use-pan-correction-logic";
 import { CorrectionIdentityStep } from "./correction/CorrectionIdentityStep";
 import { CorrectionAddressStep } from "./correction/CorrectionAddressStep";
@@ -135,13 +136,15 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
 
   // Quota states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentReason, setPaymentReason] = useState<"daily_limit" | "plan_limit">("daily_limit");
+  const [paymentReason, setPaymentReason] = useState<"daily_limit" | "monthly_limit" | "plan_limit">("daily_limit");
   const [paymentAmount, setPaymentAmount] = useState(10);
   const [watermarkAvailable, setWatermarkAvailable] = useState(false);
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
   const [mappedFormData, setMappedFormData] = useState<Record<string, any> | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  const searchParams = useSearchParams();
 
   // ── Session Control (ONE session = ONE download/print count) ──
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -159,6 +162,32 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
     }
     return () => { document.body.style.overflow = "unset"; };
   }, [showSuccessModal, isGenerating]);
+
+  // Auto-submit after payment success
+  useEffect(() => {
+    if (searchParams.get("payment_success") === "true") {
+      // Clean up the URL
+      window.history.replaceState(null, "", window.location.pathname);
+      
+      // Wait a moment for form to be populated from profile data, then submit
+      const timer = setTimeout(() => {
+        handleSubmit(onFinalSubmit, onInvalidSubmit)();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, handleSubmit]);
+
+  // Warning on refresh or leave
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Standard way to show warning dialog
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const currentValues = watch();
   const debouncedValues = useDebounce(currentValues, 1000);
@@ -439,7 +468,6 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
   };
 
   const handleFinalReset = () => {
-    localStorage.removeItem("pan_correction_draft");
     form.reset();
     setSessionId(null);
     setIsSessionConsumed(false);

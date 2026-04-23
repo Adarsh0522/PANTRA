@@ -12,6 +12,7 @@ export interface PlanConfig {
   period: string;
   description: string;
   limit: number;           // total downloads allowed (Infinity = unlimited)
+  monthlyLimit?: number;   // per-month clean downloads
   dailyLimit: number;      // per-day clean downloads (0 = no daily cap)
   watermarkLimit: number;  // per-day watermarked downloads
   watermark: boolean;
@@ -21,7 +22,7 @@ export interface PlanConfig {
   features: string[];
 }
 
-export const PLANS: Record<PlanKey, PlanConfig> = {
+export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
   free: {
     key: "free",
     name: "Free Plan",
@@ -29,6 +30,7 @@ export const PLANS: Record<PlanKey, PlanConfig> = {
     period: "forever",
     description: "Best for getting started",
     limit: Infinity,
+    monthlyLimit: 10,
     dailyLimit: 2,
     watermarkLimit: 5,
     watermark: true,
@@ -124,10 +126,84 @@ export const PLANS: Record<PlanKey, PlanConfig> = {
   },
 } as const;
 
+import { db } from "@/db";
+import { app_plans } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
 // Helper: ordered list for UI rendering
 export const PLAN_ORDER: PlanKey[] = ["free", "per_form", "monthly", "quarterly", "yearly"];
 
+// Fetch all plans from the database
+export async function getPlans(): Promise<PlanConfig[]> {
+  const fallback = PLAN_ORDER.map(key => INITIAL_PLANS[key]);
+
+  const timeout = new Promise<PlanConfig[]>((resolve) =>
+    setTimeout(() => resolve(fallback), 3000)
+  );
+
+  const dbFetch = (async () => {
+    try {
+      const records = await db.select().from(app_plans).orderBy(app_plans.sort_order);
+      if (!records || records.length === 0) return fallback;
+      return records.map(record => ({
+        key: record.key as PlanKey,
+        name: record.name,
+        price: record.price,
+        uiPrice: record.ui_price || undefined,
+        period: record.period,
+        description: record.description,
+        limit: record.total_limit === -1 ? Infinity : record.total_limit,
+        monthlyLimit: record.monthly_limit || undefined,
+        dailyLimit: record.daily_limit,
+        watermarkLimit: record.watermark_limit,
+        watermark: record.watermark,
+        extraPerForm: record.extra_per_form,
+        badge: record.badge,
+        cta: record.cta,
+        features: record.features as string[],
+      }));
+    } catch {
+      return fallback;
+    }
+  })();
+
+  return Promise.race([dbFetch, timeout]);
+}
+
+export async function getPlan(key: PlanKey): Promise<PlanConfig> {
+  try {
+    const record = await db.query.app_plans.findFirst({
+      where: eq(app_plans.key, key),
+    });
+    
+    if (record) {
+      return {
+        key: record.key as PlanKey,
+        name: record.name,
+        price: record.price,
+        uiPrice: record.ui_price || undefined,
+        period: record.period,
+        description: record.description,
+        limit: record.total_limit === -1 ? Infinity : record.total_limit,
+        monthlyLimit: record.monthly_limit || undefined,
+        dailyLimit: record.daily_limit,
+        watermarkLimit: record.watermark_limit,
+        watermark: record.watermark,
+        extraPerForm: record.extra_per_form,
+        badge: record.badge,
+        cta: record.cta,
+        features: record.features as string[],
+      };
+    }
+  } catch (error) {
+    console.error(`Failed to fetch plan ${key} from DB, falling back to INITIAL_PLANS:`, error);
+  }
+  
+  return INITIAL_PLANS[key];
+}
+
 // Amount lookup — NEVER trust frontend; always derive from this.
-export function getPlanAmount(plan: PlanKey): number {
-  return PLANS[plan].price;
+export async function getPlanAmount(plan: PlanKey): Promise<number> {
+  const p = await getPlan(plan);
+  return p.price;
 }

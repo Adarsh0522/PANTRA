@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { payments, subscriptions } from "@/db/schema";
+import { payments, subscriptions, users, referrals } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import { getPlan, type PlanKey } from "@/lib/plans";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       // Activate plan
       if (payment.plan_type !== "per_form") {
         const planKey = payment.plan_type as PlanKey;
-        const plan = PLANS[planKey];
+        const plan = await getPlan(planKey);
 
         if (plan) {
           const now = new Date();
@@ -83,6 +83,46 @@ export async function POST(req: Request) {
             start_date: now,
             end_date: endDate,
           });
+
+          // Process Referral Conversion
+          const user = await db.query.users.findFirst({
+            where: eq(users.id, payment.user_id)
+          });
+          
+          if (user && user.referred_by && !user.is_referral_converted) {
+            // Mark user as converted
+            await db.update(users)
+              .set({ is_referral_converted: true })
+              .where(eq(users.id, user.id));
+              
+            // Increment referrer's converted count
+            const referrerProfile = await db.query.referrals.findFirst({
+              where: eq(referrals.user_id, user.referred_by)
+            });
+            
+            if (referrerProfile) {
+              await db.update(referrals)
+                .set({ converted_users_count: referrerProfile.converted_users_count + 1 })
+                .where(eq(referrals.id, referrerProfile.id));
+            }
+          }
+        }
+      } else {
+        // Handle "per_form" payment by decrementing usage count
+        const existingSub = await db.query.subscriptions.findFirst({
+          where: eq(subscriptions.user_id, payment.user_id),
+        });
+
+        if (existingSub) {
+          if (existingSub.plan_type === 'free') {
+            await db.update(subscriptions)
+              .set({ free_downloads_today: Math.max(0, existingSub.free_downloads_today - 1) })
+              .where(eq(subscriptions.id, existingSub.id));
+          } else {
+            await db.update(subscriptions)
+              .set({ downloads_used: Math.max(0, existingSub.downloads_used - 1) })
+              .where(eq(subscriptions.id, existingSub.id));
+          }
         }
       }
       return NextResponse.json({ status: "verified_and_activated" });

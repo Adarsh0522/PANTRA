@@ -23,7 +23,7 @@ export function CorrectionInput({
     <div className={cn("space-y-1.5", className)}>
       <div className="flex items-center justify-between mb-1">
         <label className={cn(
-          "text-[12px] font-bold transition-colors",
+          "text-[12px] font-bold transition-colors uppercase tracking-wide",
           isSelected ? "text-blue-700" : "text-slate-500"
         )}>
           {label} {props.required && <span className="text-red-500">*</span>}
@@ -51,7 +51,7 @@ export function CorrectionInput({
           {...props}
           disabled={!isSelected}
           className={cn(
-            "w-full h-11 px-4 bg-white border rounded-lg transition-all outline-none text-[14px] placeholder:text-slate-400",
+            "w-full h-11 px-4 bg-white border rounded-lg transition-all outline-none text-[14px] uppercase placeholder:text-slate-400 placeholder:uppercase",
             error
               ? "border-red-500 focus:border-red-500"
               : isSelected 
@@ -97,7 +97,7 @@ export function CorrectionSelect({
     <div className={cn("space-y-1.5", className)}>
       <div className="flex items-center justify-between mb-1">
         <label className={cn(
-          "text-[12px] font-bold transition-colors",
+          "text-[12px] font-bold transition-colors uppercase tracking-wide",
           isSelected ? "text-blue-700" : "text-slate-500"
         )}>
           {label} {props.required && <span className="text-red-500">*</span>}
@@ -122,7 +122,7 @@ export function CorrectionSelect({
           {...props}
           disabled={!isSelected}
           className={cn(
-            "w-full h-11 px-4 pr-10 bg-white border rounded-lg transition-all outline-none appearance-none text-[14px]",
+            "w-full h-11 px-4 pr-10 bg-white border rounded-lg transition-all outline-none appearance-none text-[14px] uppercase",
             error
               ? "border-red-500"
               : isSelected 

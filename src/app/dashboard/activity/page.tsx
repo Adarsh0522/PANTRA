@@ -1,0 +1,162 @@
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/db";
+import { download_logs, pan_forms } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { formatDate } from "date-fns";
+import { FilePlus, FileEdit, Clock, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+
+interface PageProps {
+  searchParams?: Promise<any> | any;
+}
+
+export default async function ActivityPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const page = parseInt((searchParams?.page as string) || "1", 10);
+  const pageSize = 10;
+
+  const subStartDate = user.subscription?.start_date ? new Date(user.subscription.start_date) : new Date();
+  
+  const currentCycleStart = new Date();
+  currentCycleStart.setDate(subStartDate.getDate());
+  currentCycleStart.setHours(0, 0, 0, 0);
+  
+  if (currentCycleStart > new Date()) {
+    currentCycleStart.setMonth(currentCycleStart.getMonth() - 1);
+  }
+
+  const allDownloads = await db
+    .select({
+      id: download_logs.id,
+      downloaded_at: download_logs.downloaded_at,
+      form_type: pan_forms.form_type,
+      data: pan_forms.data,
+    })
+    .from(download_logs)
+    .leftJoin(pan_forms, eq(download_logs.pan_form_id, pan_forms.id))
+    .where(eq(download_logs.user_id, user.id))
+    .orderBy(desc(download_logs.downloaded_at));
+
+  const lifetimeCount = allDownloads.length;
+  const currentCycleDownloads = allDownloads.filter(log => log.downloaded_at >= currentCycleStart);
+  const monthlyCount = currentCycleDownloads.length;
+
+  const totalPages = Math.ceil(monthlyCount / pageSize);
+  const paginatedDownloads = currentCycleDownloads.slice((page - 1) * pageSize, page * pageSize);
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Activity</h1>
+          <p className="text-slate-500 mt-1 font-medium">View your PDF generations for the current billing cycle.</p>
+        </div>
+        
+        <div className="flex gap-4">
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 shadow-sm min-w-[160px]">
+            <p className="text-indigo-500 text-[10px] font-bold uppercase tracking-widest mb-1">Lifetime</p>
+            <div className="text-2xl font-black text-indigo-900 tracking-tight">{lifetimeCount}</div>
+          </div>
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl p-4 shadow-sm min-w-[160px]">
+            <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-1">Current Cycle</p>
+            <div className="text-2xl font-black text-emerald-900 tracking-tight">{monthlyCount}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden text-sm">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 className="font-bold text-slate-800 text-lg">Activity History</h3>
+        </div>
+        
+        {paginatedDownloads.length > 0 ? (
+          <>
+            <div className="divide-y divide-slate-100">
+              {paginatedDownloads.map((log) => {
+                const payload = (log.data || {}) as Record<string, any>;
+                let displayName = "Unknown User";
+                if (payload.first_name) {
+                  displayName = [payload.first_name, payload.middle_name, payload.last_name].filter(Boolean).join(' ');
+                } else if (payload.applicant_name) {
+                  displayName = payload.applicant_name;
+                } else if (payload.name) {
+                  displayName = payload.name;
+                }
+
+                return (
+                  <div key={log.id} className="p-4 px-6 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner font-bold text-lg shrink-0 ${log.form_type === 'new' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                        {log.form_type === 'new' ? <FilePlus className="w-5 h-5" /> : <FileEdit className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-base">{displayName || 'Form Submission'}</p>
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mt-0.5">
+                          <span className="capitalize">{log.form_type} PAN</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Downloaded
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right text-slate-500 text-xs font-medium bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none">
+                      {formatDate(new Date(log.downloaded_at), 'dd MMM yyyy')}
+                      <div className="text-[11px] mt-0.5 opacity-80">{formatDate(new Date(log.downloaded_at), 'hh:mm a')}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                <span className="text-sm font-medium text-slate-500">
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, monthlyCount)} of {monthlyCount} entries
+                </span>
+                <div className="flex items-center gap-2">
+                  {page > 1 ? (
+                    <Link href={`/dashboard/activity?page=${page - 1}`} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-600">
+                      <ChevronLeft className="w-4 h-4" />
+                    </Link>
+                  ) : (
+                    <div className="p-2 bg-slate-100 border border-slate-200 rounded-lg opacity-50 cursor-not-allowed text-slate-400">
+                      <ChevronLeft className="w-4 h-4" />
+                    </div>
+                  )}
+                  
+                  <span className="text-sm font-bold text-slate-700 px-2">
+                    Page {page} of {totalPages}
+                  </span>
+
+                  {page < totalPages ? (
+                    <Link href={`/dashboard/activity?page=${page + 1}`} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-600">
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  ) : (
+                    <div className="p-2 bg-slate-100 border border-slate-200 rounded-lg opacity-50 cursor-not-allowed text-slate-400">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="h-[300px] flex flex-col items-center justify-center p-8 text-center bg-slate-50/30">
+            <div className="w-16 h-16 bg-blue-50 text-blue-200 rounded-full flex items-center justify-center mb-4">
+              <Clock className="w-8 h-8 text-blue-400" />
+            </div>
+            <p className="text-slate-800 font-bold mb-1">No activity yet</p>
+            <p className="text-slate-500 text-sm font-medium max-w-sm">
+              Your generated and downloaded PAN forms for this cycle will appear here.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

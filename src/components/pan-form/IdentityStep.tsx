@@ -19,21 +19,22 @@ export function IdentityStep({ register, errors, control }: StepProps) {
         {/* Row 1: Names */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SharedInput
-            label="First Name"
-            placeholder="Adarsh Kumar"
+            label="FIRST NAME"
+            placeholder="RAJESH"
             {...register("firstName")}
             error={errors.firstName}
             required
           />
           <SharedInput
-            label="Middle Name"
-            placeholder="Sanjay"
+            label="MIDDLE NAME"
+            placeholder="KUMAR"
             {...register("middleName")}
             error={errors.middleName}
+            required
           />
           <SharedInput
-            label="Last Name"
-            placeholder="Kamble"
+            label="LAST NAME"
+            placeholder="SHARMA"
             {...register("lastName")}
             error={errors.lastName}
             required
@@ -43,18 +44,18 @@ export function IdentityStep({ register, errors, control }: StepProps) {
         {/* Row 2: Gender & DOB */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SharedSelect
-            label="Gender"
+            label="GENDER"
             options={[
-              { label: "Male", value: "MALE" },
-              { label: "Female", value: "FEMALE" },
-              { label: "Transgender", value: "TRANSGENDER" },
+              { label: "MALE", value: "MALE" },
+              { label: "FEMALE", value: "FEMALE" },
+              { label: "TRANSGENDER", value: "TRANSGENDER" },
             ]}
             {...register("gender")}
             error={errors.gender}
             required
           />
           <SharedInput
-            label="Date of Birth"
+            label="DATE OF BIRTH"
             type="date"
             {...register("dob")}
             error={errors.dob}
@@ -62,11 +63,11 @@ export function IdentityStep({ register, errors, control }: StepProps) {
           />
         </div>
 
-        {/* Row 3: Redundant DOB & Aadhaar per reference */}
+        {/* Row 3: Aadhaar */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SharedInput
-            label="Aadhaar Number"
-            placeholder="45678987654"
+            label="AADHAAR NUMBER"
+            placeholder="123456789012"
             maxLength={12}
             {...register("aadhaar")}
             error={errors.aadhaar}
@@ -91,4 +92,5 @@ export function IdentityStep({ register, errors, control }: StepProps) {
     </div>
   );
 }
+
 

@@ -1,72 +1,41 @@
 import { Check } from "lucide-react";
+import { getPlans, INITIAL_PLANS, PLAN_ORDER } from "@/lib/plans";
+import Link from "next/link";
 
-export default function Pricing() {
-  const plans = [
-    {
-      name: "Free Setup",
-      price: "₹0",
-      period: "forever",
-      description: "Perfect for testing the platform with basic features.",
-      features: [
-        "2 Form generations per day",
-        "Clean PDF Form downloads",
-        "Basic form features",
-        "Standard support",
-      ],
-      cta: "Start Free",
-      isPopular: false,
-      buttonClass: "bg-slate-100 hover:bg-slate-200 text-[#0F172A]",
-      cardClass: "bg-white border-slate-200"
-    },
-    {
-      name: "Monthly",
-      price: "₹990",
-      period: "per month",
-      description: "For active operators generating consistent daily volume.",
-      features: [
-        "Unlimited PDF Form generations",
-        "No watermarks",
-        "All features unlocked",
-        "Cost: ~₹33/day",
-      ],
-      cta: "Choose Monthly",
-      isPopular: true,
-      buttonClass: "bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-md",
-      cardClass: "bg-gradient-to-b from-[#ffffff] to-[#f8fafc] border-[#2563EB] shadow-xl md:scale-105 z-10 ring-1 ring-[#2563EB]"
-    },
-    {
-      name: "Quarterly",
-      price: "₹2399",
-      period: "for 3 months",
-      description: "A balanced plan for seasonal high-volume periods.",
-      features: [
-        "Unlimited PDF Form generations",
-        "No watermarks",
-        "Cost: ~₹26/day",
-        "Standard support",
-      ],
-      cta: "Choose 3 Months",
-      isPopular: false,
-      buttonClass: "bg-[#F97316] hover:bg-[#EA580C] text-white",
-      cardClass: "bg-white border-slate-200"
-    },
-    {
-      name: "Yearly Pro",
-      price: "₹3650",
-      period: "per year",
-      description: "Massive savings for dedicated CSC professionals.",
-      features: [
-        "Everything in Monthly",
-        "Best Value (Cost: ~₹10/day)",
-        "Priority Customer Support",
-        "Early access to new forms",
-      ],
-      cta: "Get Best Value",
-      isPopular: false,
-      buttonClass: "bg-[#0F172A] hover:bg-[#1e293b] text-white",
-      cardClass: "bg-white border-slate-200"
+export default async function Pricing() {
+  let dbPlans;
+  try {
+    dbPlans = await getPlans();
+  } catch {
+    dbPlans = PLAN_ORDER.map(key => INITIAL_PLANS[key]);
+  }
+  
+  const plans = dbPlans.filter(p => p.key !== "per_form").map((plan) => {
+    let isPopular = false;
+    let buttonClass = "bg-slate-100 hover:bg-slate-200 text-[#0F172A]";
+    let cardClass = "bg-white border-slate-200";
+
+    if (plan.key === "monthly") {
+      isPopular = true;
+      buttonClass = "bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-md";
+      cardClass = "bg-gradient-to-b from-[#ffffff] to-[#f8fafc] border-[#2563EB] shadow-xl md:scale-105 z-10 ring-1 ring-[#2563EB]";
+    } else if (plan.key === "quarterly") {
+      buttonClass = "bg-[#F97316] hover:bg-[#EA580C] text-white";
+    } else if (plan.key === "yearly") {
+      buttonClass = "bg-[#0F172A] hover:bg-[#1e293b] text-white";
     }
-  ];
+
+    const displayPrice = plan.uiPrice !== undefined ? plan.uiPrice : plan.price;
+    const priceFormatted = displayPrice === 0 ? "₹0" : `₹${displayPrice.toLocaleString("en-IN")}`;
+
+    return {
+      ...plan,
+      priceFormatted,
+      isPopular,
+      buttonClass,
+      cardClass
+    };
+  });
 
   return (
     <section id="pricing" className="py-16 lg:py-24 bg-[#F1F5F9] border-t border-slate-200">
@@ -96,7 +65,7 @@ export default function Pricing() {
               </div>
 
               <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{plan.price}</span>
+                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{plan.priceFormatted}</span>
                 <span className="text-xs text-slate-600 font-bold">/{plan.period}</span>
               </div>
 

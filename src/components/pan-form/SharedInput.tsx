@@ -12,21 +12,23 @@ export function SharedInput({
   error,
   helperText,
   className,
+  placeholder,
   ...props
 }: SharedInputProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label className="text-[12px] font-medium text-slate-600 block">
+      <label className="text-[12px] font-medium text-slate-600 block uppercase tracking-wide">
         {label} {props.required && <span className="text-red-500">*</span>}
       </label>
       <input
         className={cn(
-          "w-full h-11 px-4 bg-white border rounded-lg transition-all outline-none text-[14px] placeholder:text-slate-400",
+          "w-full h-11 px-4 bg-white border rounded-lg transition-all outline-none text-[14px] uppercase placeholder:text-slate-400 placeholder:uppercase",
           error
             ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
             : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
           props.disabled && "bg-slate-50 cursor-not-allowed text-slate-400 border-slate-200"
         )}
+        placeholder={placeholder?.toUpperCase()}
         {...props}
       />
       {error && (
@@ -53,13 +55,13 @@ export function SharedSelect({
 }: SharedSelectProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label className="text-[12px] font-medium text-slate-600 block">
+      <label className="text-[12px] font-medium text-slate-600 block uppercase tracking-wide">
         {label} {props.required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative group">
         <select
           className={cn(
-            "w-full h-11 px-4 pr-10 bg-white border rounded-lg transition-all outline-none appearance-none text-[14px]",
+            "w-full h-11 px-4 pr-10 bg-white border rounded-lg transition-all outline-none appearance-none text-[14px] uppercase",
             error
               ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
               : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
@@ -67,10 +69,10 @@ export function SharedSelect({
           )}
           {...props}
         >
-          <option value="">Select {label}</option>
+          <option value="">SELECT {label.toUpperCase()}</option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {opt.label.toUpperCase()}
             </option>
           ))}
         </select>

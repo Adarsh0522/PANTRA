@@ -56,8 +56,8 @@ export function ResidentialStatusSection({ register, errors, control }: SectionP
       {(residentialStatus === "NON_RESIDENT" || residentialStatus === "RNOR") && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
           <SharedInput
-            label="Passport Number"
-            placeholder="Enter valid passport number"
+            label="PASSPORT NUMBER"
+            placeholder="A1234567"
             {...register("passportNumber")}
             error={errors.passportNumber}
             required
@@ -68,8 +68,8 @@ export function ResidentialStatusSection({ register, errors, control }: SectionP
       {/* TIN Field (Optional) */}
       <div className="pt-6 border-t border-slate-100">
         <SharedInput
-          label="Taxpayer Identification Number (TIN)"
-          placeholder="TIN in Country of Residence (if any)"
+          label="TAXPAYER IDENTIFICATION NUMBER (TIN)"
+          placeholder="TIN IN COUNTRY OF RESIDENCE"
           {...register("tin")}
           error={errors.tin}
         />
@@ -99,7 +99,7 @@ export function ContactIncomeSection({ register, errors, control }: SectionProps
         <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
           <div className="w-full lg:w-[80px]">
             <SharedInput
-              label="Country Code"
+              label="COUNTRY CODE"
               defaultValue="91"
               {...register("contact.countryCode")}
               required
@@ -108,8 +108,9 @@ export function ContactIncomeSection({ register, errors, control }: SectionProps
 
           <div className="w-full lg:flex-1">
             <SharedInput
-              label="Mobile Number"
-              placeholder="10 digits"
+              label="MOBILE NUMBER"
+              placeholder="9876543210"
+              maxLength={10}
               {...register("contact.mobile")}
               required
             />
@@ -117,8 +118,8 @@ export function ContactIncomeSection({ register, errors, control }: SectionProps
 
           <div className="w-full lg:flex-1">
             <SharedInput
-              label="Email ID"
-              placeholder="name@example.com"
+              label="EMAIL ID"
+              placeholder="NAME@EXAMPLE.COM"
               type="email"
               {...register("contact.email")}
               required
@@ -133,13 +134,13 @@ export function ContactIncomeSection({ register, errors, control }: SectionProps
         <div className="flex gap-4">
           <div className="w-[120px]">
             <SharedInput
-              label="STD Code"
+              label="STD CODE"
               {...register("contact.stdCode")}
             />
           </div>
           <div className="flex-1">
             <SharedInput
-              label="Landline Number"
+              label="LANDLINE NUMBER"
               {...register("contact.landline")}
             />
           </div>
@@ -251,9 +252,9 @@ export function ParentsSection({ register, errors, control, setValue }: SectionP
           <div className="space-y-4 animate-in fade-in duration-300">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Father's Details</p>
             <div className="grid grid-cols-3 gap-6">
-              <SharedInput label="First Name" {...register("fatherName.firstName")} required />
-              <SharedInput label="Middle Name" {...register("fatherName.middleName")} />
-              <SharedInput label="Last Name" {...register("fatherName.lastName")} required />
+              <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} required />
+              <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} required />
+              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} required />
             </div>
           </div>
         )}
@@ -262,9 +263,9 @@ export function ParentsSection({ register, errors, control, setValue }: SectionP
           <div className="space-y-4 animate-in fade-in duration-300 pt-6 border-t border-slate-100">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Mother's Details</p>
             <div className="grid grid-cols-3 gap-6">
-              <SharedInput label="First Name" {...register("motherName.firstName")} required />
-              <SharedInput label="Middle Name" {...register("motherName.middleName")} />
-              <SharedInput label="Last Name" {...register("motherName.lastName")} required />
+              <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} required />
+              <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} required />
+              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} required />
             </div>
           </div>
         )}
@@ -345,10 +346,10 @@ export function DeclarationSection({ register, errors, control, setValue }: Sect
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">AO Code Details</p>
         <div className="grid grid-cols-4 gap-6">
-          <SharedInput label="Area Code" maxLength={3} {...register("aoCode.areaCode")} required placeholder="PNE" />
-          <SharedInput label="AO Type" maxLength={2} {...register("aoCode.aoType")} required placeholder="W" />
-          <SharedInput label="Range" maxLength={3} {...register("aoCode.rangeCode")} required placeholder="231" />
-          <SharedInput label="AO No" maxLength={2} {...register("aoCode.aoNo")} required placeholder="1" />
+          <SharedInput label="AREA CODE" maxLength={3} {...register("aoCode.areaCode")} required placeholder="PNE" />
+          <SharedInput label="AO TYPE" maxLength={2} {...register("aoCode.aoType")} required placeholder="W" />
+          <SharedInput label="RANGE" maxLength={3} {...register("aoCode.rangeCode")} required placeholder="231" />
+          <SharedInput label="AO NO" maxLength={2} {...register("aoCode.aoNo")} required placeholder="1" />
         </div>
       </div>
 
@@ -356,7 +357,7 @@ export function DeclarationSection({ register, errors, control, setValue }: Sect
       <div className="space-y-4 pt-6 border-t border-slate-100">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Declaration & Verification</p>
         <div className="grid grid-cols-2 gap-6">
-          <SharedInput label="Verification Place" placeholder="Mumbai" {...register("verification.place")} required />
+          <SharedInput label="VERIFICATION PLACE" placeholder="MUMBAI" {...register("verification.place")} required />
           <div className="px-6 py-4 bg-slate-900 rounded-2xl relative overflow-hidden ring-1 ring-white/10 shadow-2xl flex flex-col justify-center">
             <div className="absolute top-0 right-0 p-2 text-[9px] font-bold text-blue-400 uppercase tracking-tighter">Secure Matrix v2.4</div>
             <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Current Date</p>
@@ -380,17 +381,17 @@ export function RepresentativeAssesseeSection({ register, errors, control }: Sec
           <p className="text-[10px] text-slate-500 italic">Name of the person representing the applicant</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <SharedInput label="First Name" {...register("raDetails.firstName")} required />
-          <SharedInput label="Middle Name" {...register("raDetails.middleName")} />
-          <SharedInput label="Last Name" {...register("raDetails.lastName")} required />
+          <SharedInput label="FIRST NAME" placeholder="VIKRAM" {...register("raDetails.firstName")} required />
+          <SharedInput label="MIDDLE NAME" placeholder="SINGH" {...register("raDetails.middleName")} required />
+          <SharedInput label="LAST NAME" placeholder="PATEL" {...register("raDetails.lastName")} required />
         </div>
       </div>
 
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Identity Details (PAN or Aadhaar)</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SharedInput label="RA PAN Number" placeholder="ABCDE1234F" {...register("raDetails.pan" as any)} />
-          <SharedInput label="RA Aadhaar Number" placeholder="12 digits" {...register("raDetails.aadhaar" as any)} />
+          <SharedInput label="RA PAN NUMBER" placeholder="ABCDE1234F" {...register("raDetails.pan" as any)} />
+          <SharedInput label="RA AADHAAR NUMBER" placeholder="123456789012" {...register("raDetails.aadhaar" as any)} />
         </div>
         {errors.raDetails?.pan && <p className="text-[10px] text-red-500 font-medium italic">{errors.raDetails.pan.message}</p>}
       </div>
@@ -399,13 +400,13 @@ export function RepresentativeAssesseeSection({ register, errors, control }: Sec
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">RA Contact Details</p>
         <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
           <div className="w-full lg:w-[80px]">
-            <SharedInput label="Code" defaultValue="91" {...register("raDetails.countryCode" as any)} />
+            <SharedInput label="CODE" defaultValue="91" {...register("raDetails.countryCode" as any)} />
           </div>
           <div className="w-full lg:flex-1">
-            <SharedInput label="Mobile Number" placeholder="10 digits" {...register("raDetails.mobile" as any)} required />
+            <SharedInput label="MOBILE NUMBER" placeholder="9876543210" maxLength={10} {...register("raDetails.mobile" as any)} required />
           </div>
           <div className="w-full lg:flex-1">
-            <SharedInput label="Email ID" placeholder="name@example.com" type="email" {...register("raDetails.email" as any)} required />
+            <SharedInput label="EMAIL ID" placeholder="NAME@EXAMPLE.COM" type="email" {...register("raDetails.email" as any)} required />
           </div>
         </div>
       </div>
@@ -414,10 +415,10 @@ export function RepresentativeAssesseeSection({ register, errors, control }: Sec
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">RA Landline Details (Optional)</p>
         <div className="flex gap-4">
           <div className="w-[100px]">
-            <SharedInput label="STD Code" {...register("raDetails.stdCode" as any)} />
+            <SharedInput label="STD CODE" {...register("raDetails.stdCode" as any)} />
           </div>
           <div className="flex-1">
-            <SharedInput label="Landline Number" {...register("raDetails.landline" as any)} />
+            <SharedInput label="LANDLINE NUMBER" {...register("raDetails.landline" as any)} />
           </div>
         </div>
       </div>

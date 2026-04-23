@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePanFormLogic } from "@/hooks/use-pan-form-logic";
 import { IdentityStep } from "./IdentityStep";
 import { AddressStep } from "./AddressStep";
@@ -140,10 +141,12 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
 
   // Quota states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentReason, setPaymentReason] = useState<"daily_limit" | "plan_limit">("daily_limit");
+  const [paymentReason, setPaymentReason] = useState<"daily_limit" | "monthly_limit" | "plan_limit">("daily_limit");
   const [paymentAmount, setPaymentAmount] = useState(10);
   const [watermarkAvailable, setWatermarkAvailable] = useState(false);
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
 
   // ── Session Control (ONE session = ONE download/print count) ──
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -161,6 +164,32 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
     }
     return () => { document.body.style.overflow = "unset"; };
   }, [showSuccessModal, isGenerating]);
+
+  // Auto-submit after payment success
+  useEffect(() => {
+    if (searchParams.get("payment_success") === "true") {
+      // Clean up the URL
+      window.history.replaceState(null, "", window.location.pathname);
+      
+      // Wait a moment for form to be populated from profile data, then submit
+      const timer = setTimeout(() => {
+        handleSubmit(onFinalSubmit, onInvalidSubmit)();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, handleSubmit]);
+
+  // Warning on refresh or leave
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; // Standard way to show warning dialog
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const currentValues = watch();
 
@@ -465,8 +494,7 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
 
   const handleFinalReset = () => {
     // 1. Clear specific storage key
-    localStorage.removeItem("pan_form_draft");
-    // 2. Reset internal form state
+    // 1. Reset internal form state
     form.reset();
     // 3. Clear session state
     setSessionId(null);
@@ -481,7 +509,7 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
 
   return (
     <div className={cn(
-      "w-full h-full flex flex-col lg:flex-row gap-6 items-start bg-[#F1F5F9]",
+      "w-full flex flex-col lg:flex-row gap-6 items-start bg-[#F1F5F9]",
       noPadding ? "" : "pt-2 px-4 lg:px-6"
     )}>
       {/* Form Section - Center (65%) */}
@@ -705,7 +733,7 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
       </form>
 
       {/* Live Preview Section - Right (35%) */}
-      <div className="w-full lg:w-[380px] lg:sticky lg:top-4 h-[525px] max-h-[90vh]">
+      <div className="w-full lg:w-[380px] lg:sticky lg:top-8 h-[525px] max-h-[90vh]">
         <div className="preview-card rounded-[24px] p-6 shadow-2xl relative overflow-hidden group h-full flex flex-col">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full -mr-16 -mt-16" />
 

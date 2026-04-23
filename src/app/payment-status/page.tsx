@@ -46,7 +46,12 @@ function PaymentStatusContent() {
           setStatus("success");
           setPlan(data.plan || "");
           setTimeout(() => {
-            router.push("/dashboard");
+            const returnUrl = searchParams.get("return_url");
+            if (returnUrl) {
+              router.push(`${returnUrl}?payment_success=true`);
+            } else {
+              router.push("/dashboard");
+            }
           }, 3000);
           return;
         }

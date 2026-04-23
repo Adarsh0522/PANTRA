@@ -12,6 +12,8 @@ export const users = pgTable('users', {
   mobile_number: text('mobile_number').unique(),
   center_name: text('center_name'),
   role: text('role').default('user').notNull(),
+  referred_by: text('referred_by'),
+  is_referral_converted: boolean('is_referral_converted').default(false).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -65,6 +67,26 @@ export const subscriptions = pgTable('subscriptions', {
   last_usage_date: timestamp('last_usage_date').defaultNow().notNull(),
   start_date: timestamp('start_date').defaultNow().notNull(),
   end_date: timestamp('end_date'),
+});
+
+// ─── App Plans ───────────────────────────────────────────────────────────────
+export const app_plans = pgTable('app_plans', {
+  key: text('key').primaryKey(),
+  name: text('name').notNull(),
+  price: integer('price').notNull(),
+  ui_price: integer('ui_price'),
+  period: text('period').notNull(),
+  description: text('description').notNull(),
+  total_limit: integer('total_limit').notNull(),
+  monthly_limit: integer('monthly_limit'),
+  daily_limit: integer('daily_limit').notNull(),
+  watermark_limit: integer('watermark_limit').notNull(),
+  watermark: boolean('watermark').notNull(),
+  extra_per_form: integer('extra_per_form').notNull(),
+  badge: text('badge'),
+  cta: text('cta').notNull(),
+  features: jsonb('features').notNull(),
+  sort_order: integer('sort_order').notNull(),
 });
 
 // ─── Payments ────────────────────────────────────────────────────────────────

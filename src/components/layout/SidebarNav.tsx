@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FilePlus, Clock, ShieldCheck, CreditCard, LucideIcon, UserCog } from "lucide-react";
+import { LayoutDashboard, FilePlus, Clock, ShieldCheck, CreditCard, LucideIcon, UserCog, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItemProps {
@@ -15,9 +15,18 @@ function NavItem({ href, icon: Icon, label }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
 
+  const handleClick = () => {
+    // Auto-collapse sidebar on mobile after clicking a menu item
+    const toggle = document.getElementById("mobile-sidebar-toggle") as HTMLInputElement | null;
+    if (toggle && toggle.checked) {
+      toggle.checked = false;
+    }
+  };
+
   return (
     <Link
       href={href}
+      onClick={handleClick}
       className={cn(
         "flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-[13px] transition-all relative group",
         isActive
@@ -47,6 +56,7 @@ export function SidebarNav() {
       <NavItem href="/dashboard/profile" icon={UserCog} label="Profile Setup" />
       <NavItem href="/dashboard/pricing" icon={CreditCard} label="Pricing" />
       <NavItem href="/dashboard/subscription" icon={ShieldCheck} label="Subscriptions" />
+      <NavItem href="/dashboard/referrals" icon={Gift} label="Refer & Earn" />
     </nav>
   );
 }

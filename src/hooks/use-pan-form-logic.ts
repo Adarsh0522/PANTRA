@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { panFormSchema, PanFormData } from "@/lib/form-engine/schema";
 import { calculateAge } from "@/lib/mapping-layer/text-mapper";
 
-const STORAGE_KEY = "pan_form_draft";
-
 // Helper to get current date in dd-mm-yyyy format
 const getTodayFormatted = () => {
   const today = new Date();
@@ -72,43 +70,22 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
   const residenceAddress = useWatch({ control, name: "addresses.residence" });
   const addressType = useWatch({ control, name: "addressType" });
 
-  // Load from localStorage on mount & Auto-fill Profile Data
+  // Auto-fill Profile Data
   useEffect(() => {
     let parsed: any = null;
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    
-    if (savedData) {
-      try {
-        parsed = JSON.parse(savedData);
-        // Data Migration: Handle legacy incomeSource array
-        if (Array.isArray(parsed.incomeSource)) {
-          parsed.incomeSource = parsed.incomeSource[0] || "";
-        }
-      } catch (e) {
-        console.error("Failed to parse saved PAN form state", e);
-      }
-    }
 
     // Auto-fill logic: if we have a profile from the DB, fill any blank strings
     // But ONLY if the user hasn't explicitly set them yet.
     if (initialProfile) {
       const p = initialProfile;
-      parsed = parsed || {};
+      parsed = {};
       
       // Auto-fill Basic Details into Contact
       if (!parsed.contact) parsed.contact = {};
       if (!parsed.contact.email && p.email) parsed.contact.email = p.email;
-      
-      if (!parsed.firstName && !parsed.lastName) {
-        // Simple name split if full_name exists
-        const parts = p.full_name ? p.full_name.split(' ') : [];
-        if (parts.length === 1) {
-          parsed.lastName = parts[0];
-        } else if (parts.length > 1) {
-          parsed.firstName = parts[0];
-          parsed.lastName = parts.slice(1).join(' ');
-        }
-      }
+
+      // NOTE: Do NOT auto-fill firstName/lastName from profile.
+      // User must enter these manually in the form.
 
       // Auto-fill Office Address
       if (!parsed.addresses) parsed.addresses = {};
@@ -131,20 +108,24 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
       if (!ao.aoType && p.ao_type) ao.aoType = p.ao_type;
       if (!ao.rangeCode && p.ao_range_code) ao.rangeCode = p.ao_range_code;
       if (!ao.aoNo && p.ao_number) ao.aoNo = p.ao_number;
+      // Preserve critical defaults that form.reset() would otherwise wipe
+      parsed.incomeSource = parsed.incomeSource || "none";
+      parsed.isSingleParent = parsed.isSingleParent || "NO";
+      parsed.parentToPrint = parsed.parentToPrint || "FATHER";
+      parsed.addressType = parsed.addressType || "RESIDENCE";
+      parsed.residentialStatus = parsed.residentialStatus || "RESIDENT";
+      parsed.isMinor = parsed.isMinor || false;
+      parsed.hasRA = parsed.hasRA || false;
+      parsed.raSameAsResidence = parsed.raSameAsResidence || false;
+      if (!parsed.contact.countryCode) parsed.contact.countryCode = "91";
+      if (!parsed.documents) parsed.documents = { proofOfIdentity: true, proofOfAddress: true, proofOfDob: true };
+      if (!parsed.verification) parsed.verification = { name: "", place: "", date: getTodayFormatted(), pronoun: "himself" };
     }
 
     if (parsed) {
       form.reset(parsed);
     }
   }, [initialProfile]);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-    });
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
 
   // Age calculation and isMinor auto-toggle
   useEffect(() => {
@@ -154,8 +135,13 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
       if (minor !== isMinor) {
         setValue("isMinor", minor);
         if (minor) {
+          // Minor → auto-set to REPRESENTATIVE
           setValue("hasRA", true);
           setValue("addressType", "REPRESENTATIVE");
+        } else {
+          // No longer minor → revert to RESIDENCE
+          setValue("addressType", "RESIDENCE");
+          setValue("hasRA", false);
         }
       }
     }

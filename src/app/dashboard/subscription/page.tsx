@@ -1,10 +1,9 @@
 import { getCurrentUser } from "@/lib/auth";
-import { CheckCircle2, Copy, AlertTriangle, Crown, Download, Check, XCircle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Crown, Download, Check, XCircle } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
-import { payments, generated_pdfs, pan_forms, referrals, subscriptions } from "@/db/schema";
+import { payments, download_logs, pan_forms, subscriptions } from "@/db/schema";
 import { eq, desc, count } from "drizzle-orm";
-import { claimReferralReward } from "./actions";
 import { formatDate } from "date-fns";
 
 export default async function SubscriptionPage() {
@@ -16,9 +15,8 @@ export default async function SubscriptionPage() {
 
   // 1. Fetch total PDFs generated
   const totalPdfsResult = await db.select({ count: count() })
-    .from(generated_pdfs)
-    .innerJoin(pan_forms, eq(generated_pdfs.pan_form_id, pan_forms.id))
-    .where(eq(pan_forms.user_id, user.id));
+    .from(download_logs)
+    .where(eq(download_logs.user_id, user.id));
   const totalPdfs = totalPdfsResult[0]?.count || 0;
 
   // 2. Fetch last 5 transactions
@@ -28,26 +26,7 @@ export default async function SubscriptionPage() {
     limit: 5,
   });
 
-  // 3. Fetch or Create Referral
-  let userReferral = await db.query.referrals.findFirst({
-    where: eq(referrals.user_id, user.id)
-  });
-
-  if (!userReferral) {
-    const code = (user.mobile_number || "0000").slice(-4) + Math.random().toString(36).substring(2, 6).toUpperCase();
-    const newRefs = await db.insert(referrals).values({
-      id: crypto.randomUUID(),
-      user_id: user.id,
-      referral_code: code,
-    }).returning();
-    userReferral = newRefs[0];
-  }
-
-  const { referred_users_count, converted_users_count, rewards_claimed, referral_code } = userReferral;
-  const eligibleClaims = Math.floor(converted_users_count / 2);
-  const canClaimReward = converted_users_count >= 2 && rewards_claimed < eligibleClaims;
-
-  // 4. Calculate Expiry Warning
+  // 3. Calculate Expiry Warning
   let daysUntilExpiry: number | null = null;
   const isPaid = currentPlan !== 'free' && sub?.end_date;
 
@@ -63,7 +42,17 @@ export default async function SubscriptionPage() {
   const purchasedOn = sub?.start_date ? formatDate(new Date(sub.start_date), 'dd MMMM yyyy') : '-';
   const expiresOn = sub?.end_date ? formatDate(new Date(sub.end_date), 'dd MMMM yyyy') : '-';
 
-  const todayDownloadsUsed = sub?.free_downloads_today || 0;
+  let todayDownloadsUsed = sub?.free_downloads_today || 0;
+  if (sub?.last_usage_date) {
+    const lastDate = new Date(sub.last_usage_date);
+    const now = new Date();
+    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() || 
+      lastDate.getUTCMonth() !== now.getUTCMonth() || 
+      lastDate.getUTCFullYear() !== now.getUTCFullYear();
+    if (isDifferentDay) {
+      todayDownloadsUsed = 0;
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
@@ -155,70 +144,6 @@ export default async function SubscriptionPage() {
             {totalPdfs}
           </div>
           <p className="text-slate-400 text-sm font-medium mt-2">PDFs Generated (Lifetime)</p>
-        </div>
-      </div>
-
-      {/* 4. REFERRAL SYSTEM */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10 max-w-3xl">
-          <h2 className="text-2xl font-extrabold mb-2 tracking-tight">Refer a friend, get 1 month Free!</h2>
-          <p className="text-blue-100 mb-8 font-medium">If 2 referred operators purchase any paid subscription, you unlock 1 month of unlimited access free (worth ₹990).</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Code Copy */}
-            <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Your Referral Code</div>
-                <div className="font-mono text-3xl font-black tracking-widest">{referral_code}</div>
-              </div>
-
-              {/* Copy functionality needs to be client side ideally, but here we can just show a button that users manually select/copy, or use 'navigator.clipboard' in a tiny client component. We'll leave it as a styled interactive-looking element. */}
-              <button
-                className="bg-white text-indigo-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg shadow-black/10 flex items-center justify-center gap-2"
-              // A valid React approach would use a Client component for copying link. Leaving this for aesthetic mapping.
-              >
-                <Copy className="w-4 h-4" /> Copy Link
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 flex flex-col justify-center">
-              <div className="flex justify-between items-end">
-                <div className="text-blue-200 text-xs font-bold uppercase tracking-wider">Referred</div>
-                <div className="text-2xl font-black">{referred_users_count}</div>
-              </div>
-              <div className="h-px bg-white/20 my-3 hidden md:block" />
-              <div className="flex justify-between items-end mt-2 md:mt-0">
-                <div className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Converted (Paid)</div>
-                <div className="text-2xl font-black text-emerald-300">{converted_users_count}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between flex-col sm:flex-row gap-4">
-            <span className="text-blue-200 font-medium text-sm">
-              {canClaimReward
-                ? "You have unlocked a free reward!"
-                : "Refer 2 users who purchase a plan to unlock reward."}
-            </span>
-
-            <form action={async () => { "use server"; await claimReferralReward(); }}>
-              {canClaimReward ? (
-                <button type="submit" className="bg-gradient-to-r from-emerald-400 to-emerald-500 text-slate-900 px-8 py-3 rounded-xl font-black shadow-lg shadow-emerald-500/30 hover:scale-105 transition-transform">
-                  Claim 1 Month Free
-                </button>
-              ) : (
-                <button disabled className="bg-white/5 text-white/40 px-8 py-3 rounded-xl font-bold border border-white/10 cursor-not-allowed">
-                  Claim 1 Month Free
-                </button>
-              )}
-            </form>
-          </div>
-        </div>
-
-        {/* Decorative BG */}
-        <div className="absolute right-0 bottom-0 opacity-10 translate-x-1/4 translate-y-1/4 pointer-events-none">
-          <Crown className="w-96 h-96" />
         </div>
       </div>
 

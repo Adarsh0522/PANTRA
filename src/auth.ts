@@ -21,6 +21,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "database",
   },
+  trustHost: true,
   callbacks: {
     // 1. Session Limit Logic
     async signIn({ user }) {

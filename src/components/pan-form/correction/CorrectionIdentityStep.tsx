@@ -34,20 +34,10 @@ export function CorrectionIdentityStep({ register, errors, control, setValue }: 
   return (
     <div className="premium-card">
       <div className="space-y-6">
-        {/* Step 1 Order: 
-           1. Existing PAN Number (Required)
-           2. Aadhaar Number (Required)
-           3. First Name (Required)
-           4. Middle Name (Optional)
-           5. Last Name (Required)
-           6. Gender (Required)
-           7. Date of Birth (Required)
-        */}
-
         {/* Row 1: Existing PAN & Aadhaar */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SharedInput
-            label="Existing PAN Number"
+            label="EXISTING PAN NUMBER"
             placeholder="ABCDE1234F"
             {...register("oldPan")}
             error={errors.oldPan}
@@ -56,8 +46,8 @@ export function CorrectionIdentityStep({ register, errors, control, setValue }: 
             className="uppercase"
           />
           <SharedInput
-            label="Aadhaar Number"
-            placeholder="12 digits"
+            label="AADHAAR NUMBER"
+            placeholder="123456789012"
             {...register("aadhaar")}
             error={errors.aadhaar}
             required
@@ -65,45 +55,46 @@ export function CorrectionIdentityStep({ register, errors, control, setValue }: 
           />
         </div>
 
-        {/* Row 3: Names */}
+        {/* Row 2: Names */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SharedInput
-            label="First Name"
-            placeholder="Adarsh Kumar"
+            label="FIRST NAME"
+            placeholder="RAJESH"
             {...register("firstName")}
             error={errors.firstName}
             required
           />
           <SharedInput
-            label="Middle Name"
-            placeholder="Sanjay"
+            label="MIDDLE NAME"
+            placeholder="KUMAR"
             {...register("middleName")}
             error={errors.middleName}
+            required
           />
           <SharedInput
-            label="Last Name"
-            placeholder="Kamble"
+            label="LAST NAME"
+            placeholder="SHARMA"
             {...register("lastName")}
             error={errors.lastName}
             required
           />
         </div>
 
-        {/* Row 4: Gender & DOB */}
+        {/* Row 3: Gender & DOB */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SharedSelect
-            label="Gender"
+            label="GENDER"
             options={[
-              { label: "Male", value: "MALE" },
-              { label: "Female", value: "FEMALE" },
-              { label: "Transgender", value: "TRANSGENDER" },
+              { label: "MALE", value: "MALE" },
+              { label: "FEMALE", value: "FEMALE" },
+              { label: "TRANSGENDER", value: "TRANSGENDER" },
             ]}
             {...register("gender")}
             error={errors.gender}
             required
           />
           <SharedInput
-            label="Date of Birth"
+            label="DATE OF BIRTH"
             type="date"
             {...register("dob")}
             error={errors.dob}

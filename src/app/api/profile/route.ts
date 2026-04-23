@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { user_profiles, sessions, users } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import crypto from "crypto";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,6 +26,11 @@ export async function GET() {
       orderBy: [asc(sessions.created_at)],
     });
 
+    // Fetch User IP and User-Agent from Request
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const userIp = forwardedFor ? forwardedFor.split(",")[0].trim() : (req.headers.get("x-real-ip") || "Unknown IP");
+    const userAgent = req.headers.get("user-agent") || "Standard Web Session";
+
     return NextResponse.json({
       profile: {
         ...profile,
@@ -35,8 +40,8 @@ export async function GET() {
       },
       sessions: activeSessions.map(s => ({
         id: s.sessionToken,
-        ip_address: null, // NextAuth default sessions don't store IP or device info easily unless customized
-        device_info: "Standard Web Session",
+        ip_address: userIp, 
+        device_info: userAgent,
         last_active_at: s.created_at,
       })),
     });

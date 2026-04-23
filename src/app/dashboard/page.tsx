@@ -1,10 +1,10 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getTodayDownloadCount } from "@/lib/download-guard";
-import { PLANS } from "@/lib/plans";
+import { getPlan, type PlanKey } from "@/lib/plans";
 import Link from "next/link";
-import { FilePlus, Clock, Search, Zap, AlertTriangle, Play, CheckCircle2, MessageCircle, HelpCircle, ArrowRight, CreditCard, FileEdit } from "lucide-react";
+import { FilePlus, Clock, Search, Zap, AlertTriangle, Play, CheckCircle2, MessageCircle, HelpCircle, ArrowRight, CreditCard, FileEdit, Crop } from "lucide-react";
 import { db } from "@/db";
-import { pan_forms, generated_pdfs } from "@/db/schema";
+import { pan_forms, download_logs } from "@/db/schema";
 import { eq, desc, and, count, gte } from "drizzle-orm";
 import { formatDate } from "date-fns";
 
@@ -15,14 +15,34 @@ export default async function DashboardPage() {
   // Real Stats from DB
   const todayDownloads = await getTodayDownloadCount(user.id);
   const planKey = (user.subscription?.plan_type as any) || 'free';
-  const plan = PLANS[planKey as keyof typeof PLANS] || PLANS.free;
+  const plan = await getPlan(planKey as PlanKey);
 
   const isFree = planKey === 'free';
   const sub = user.subscription;
 
   // Usage tracking
-  const freeDownloadsUsed = sub?.free_downloads_today || 0;
-  const paidDownloadsUsed = sub?.downloads_used || 0;
+  let freeDownloadsUsed = sub?.free_downloads_today || 0;
+  let paidDownloadsUsed = sub?.downloads_used || 0;
+
+  if (sub?.last_usage_date) {
+    const lastDate = new Date(sub.last_usage_date);
+    const now = new Date();
+    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() || 
+      lastDate.getUTCMonth() !== now.getUTCMonth() || 
+      lastDate.getUTCFullYear() !== now.getUTCFullYear();
+    
+    if (isDifferentDay) {
+      freeDownloadsUsed = 0;
+    }
+
+    const isDifferentMonth = lastDate.getUTCMonth() !== now.getUTCMonth() || 
+      lastDate.getUTCFullYear() !== now.getUTCFullYear();
+      
+    if (isDifferentMonth && isFree) {
+      paidDownloadsUsed = 0;
+    }
+  }
+
   const downloadLimit = sub?.download_limit || 2;
   const remainingFree = Math.max(0, 2 - freeDownloadsUsed);
   const remainingPaid = downloadLimit === 999999 ? 'Unlimited' : Math.max(0, downloadLimit - paidDownloadsUsed);
@@ -37,15 +57,10 @@ export default async function DashboardPage() {
   const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 2 && daysUntilExpiry >= 0;
 
   // Database Queries
-  const resumeForm = await db.query.pan_forms.findFirst({
-    where: and(eq(pan_forms.user_id, user.id), eq(pan_forms.status, 'draft')),
-    orderBy: [desc(pan_forms.created_at)],
-  });
 
   const totalPdfsResult = await db.select({ count: count() })
-    .from(generated_pdfs)
-    .innerJoin(pan_forms, eq(generated_pdfs.pan_form_id, pan_forms.id))
-    .where(eq(pan_forms.user_id, user.id));
+    .from(download_logs)
+    .where(eq(download_logs.user_id, user.id));
   const lifetimePdfs = totalPdfsResult[0]?.count || 0;
 
   const startOfMonth = new Date();
@@ -53,9 +68,8 @@ export default async function DashboardPage() {
   startOfMonth.setHours(0, 0, 0, 0);
 
   const monthlyPdfsResult = await db.select({ count: count() })
-    .from(generated_pdfs)
-    .innerJoin(pan_forms, eq(generated_pdfs.pan_form_id, pan_forms.id))
-    .where(and(eq(pan_forms.user_id, user.id), gte(generated_pdfs.created_at, startOfMonth)));
+    .from(download_logs)
+    .where(and(eq(download_logs.user_id, user.id), gte(download_logs.downloaded_at, startOfMonth)));
   const monthlyPdfs = monthlyPdfsResult[0]?.count || 0;
 
   const recentForms = await db.query.pan_forms.findMany({
@@ -142,25 +156,21 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {resumeForm ? (
-          <Link href={`/dashboard/${resumeForm.form_type}-pan`} className="bg-gradient-to-br from-indigo-500 to-indigo-700 border border-indigo-400 hover:from-indigo-600 hover:to-indigo-800 hover:shadow-xl hover:shadow-indigo-500/30 rounded-2xl p-6 smooth-transition group flex flex-col justify-between text-white relative overflow-hidden">
-            <div className="w-12 h-12 bg-white/20 text-white rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 smooth-transition relative z-10 backdrop-blur-md shadow-inner">
-              <Play className="w-6 h-6 ml-0.5 fill-white" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="font-bold text-white">Resume Application</h3>
-              <p className="text-indigo-100 text-sm mt-1 line-clamp-1 opacity-90">
-                Continue your last draft
-              </p>
-            </div>
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 smooth-transition" />
-          </Link>
-        ) : (
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 border-dashed rounded-2xl p-6 flex flex-col justify-center items-center text-center text-slate-400 shadow-inner">
-            <Search className="w-8 h-8 mb-2 opacity-50 text-slate-300" />
-            <p className="text-sm font-medium">No drafts available</p>
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+          <div className="absolute top-4 right-4 bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-purple-200">
+            Coming Soon
           </div>
-        )}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-10 -mt-10" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-5 ring-4 ring-white shadow-sm opacity-80">
+              <Crop className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg opacity-80">Crop Aadhaar Card</h3>
+            <p className="text-slate-500 text-sm mt-1 opacity-80">
+              Auto-crop front and back sides of Aadhaar from PDF uploads.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -233,6 +243,7 @@ export default async function DashboardPage() {
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="font-bold text-slate-800">Recent Activity</h3>
+              <Link href="/dashboard/activity" className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">See all</Link>
             </div>
 
             <div className="flex-1">
@@ -265,9 +276,6 @@ export default async function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <Link href={`/dashboard/${form.form_type}-pan`} className="opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
-                          Resume
-                        </Link>
                       </div>
                     );
                   })}

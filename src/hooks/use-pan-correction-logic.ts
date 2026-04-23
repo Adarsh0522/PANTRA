@@ -3,8 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { panCorrectionSchema, PanCorrectionData } from "@/lib/form-engine/correction-schema";
 
-const STORAGE_KEY = "pan_correction_draft";
-
 const getTodayFormatted = () => {
     const today = new Date();
     const d = String(today.getDate()).padStart(2, '0');
@@ -55,36 +53,20 @@ export function usePanCorrectionLogic(initialProfile?: any): UseFormReturn<PanCo
 
     const { formState: { errors } } = form;
 
-    // Load from localStorage
+    // Auto-fill from DB Profile
     useEffect(() => {
         let parsed: any = null;
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                parsed = JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to parse correction draft", e);
-            }
-        }
 
         if (initialProfile) {
             const p = initialProfile;
-            parsed = parsed || {};
+            parsed = {};
 
             // Auto-fill Basic Details into Contact
             if (!parsed.contact) parsed.contact = {};
             if (!parsed.contact.email && p.email) parsed.contact.email = p.email;
 
-            if (!parsed.firstName && !parsed.lastName) {
-                // Simple name split if full_name exists
-                const parts = p.full_name ? p.full_name.split(' ') : [];
-                if (parts.length === 1) {
-                    parsed.lastName = parts[0];
-                } else if (parts.length > 1) {
-                    parsed.firstName = parts[0];
-                    parsed.lastName = parts.slice(1).join(' ');
-                }
-            }
+            // NOTE: Do NOT auto-fill firstName/lastName from profile.
+            // User must enter these manually in the form.
 
             // Auto-fill Office Address
             if (!parsed.addresses) parsed.addresses = {};
@@ -99,20 +81,25 @@ export function usePanCorrectionLogic(initialProfile?: any): UseFormReturn<PanCo
             if (!o.postOffice && p.post_office) o.postOffice = p.post_office;
             if (!o.pin && p.pin_code) o.pin = p.pin_code;
             if (!o.country) o.country = p.country || "INDIA";
+            // Preserve critical defaults
+            parsed.isSingleParent = parsed.isSingleParent || "NO";
+            parsed.parentToPrint = parsed.parentToPrint || "FATHER";
+            parsed.addressType = parsed.addressType || "RESIDENCE";
+            parsed.isCorrectionMode = true;
+            if (!parsed.contact.isdCode) parsed.contact.isdCode = "91";
+            if (!parsed.correctionFields) parsed.correctionFields = {
+                firstName: false, middleName: false, lastName: false,
+                gender: false, dob: false, aadhaar: false, address: false,
+                mobile: false, email: false, fatherName: false, motherName: false,
+                passport: false, tin: false, landline: false,
+            };
+            if (!parsed.verification) parsed.verification = { name: "", place: "", date: getTodayFormatted(), pronoun: "himself" };
         }
 
         if (parsed) {
             form.reset(parsed);
         }
     }, [form, initialProfile]);
-
-    // Save to localStorage
-    useEffect(() => {
-        const sub = form.watch((value) => {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-        });
-        return () => sub.unsubscribe();
-    }, [form]);
 
     return form;
 }

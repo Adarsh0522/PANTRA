@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import type { PlanKey, PlanConfig } from "@/lib/plans";
 import { Check, Zap, Crown, Sparkles, ArrowRight, Shield, Loader2 } from "lucide-react";
 
-export default function PricingClient({ activePlanKey }: { activePlanKey: string }) {
+export default function PricingClient({ activePlanKey, plans }: { activePlanKey: string, plans: PlanConfig[] }) {
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<PlanKey | null>(null);
 
@@ -40,16 +40,22 @@ export default function PricingClient({ activePlanKey }: { activePlanKey: string
     }
   }
 
-  const freePlan = PLANS.free;
-  const monthlyPlan = PLANS.monthly;
-  const quarterlyPlan = PLANS.quarterly;
-  const yearlyPlan = PLANS.yearly;
+  const fallbackPlan = (key: PlanKey, name: string): PlanConfig => ({
+    key, name, price: 0, period: "unknown", description: "",
+    limit: 0, dailyLimit: 0, watermarkLimit: 0, watermark: false,
+    extraPerForm: 0, badge: null, cta: "Select", features: []
+  });
+
+  const freePlan = plans.find(p => p.key === "free") || fallbackPlan("free", "Free Plan");
+  const monthlyPlan = plans.find(p => p.key === "monthly") || fallbackPlan("monthly", "Monthly Plan");
+  const quarterlyPlan = plans.find(p => p.key === "quarterly") || fallbackPlan("quarterly", "Quarterly Plan");
+  const yearlyPlan = plans.find(p => p.key === "yearly") || fallbackPlan("yearly", "Yearly Plan");
 
   // Conditional Logic flag
   const isYearlyActive = activePlanKey === "yearly";
 
   // Reusable Card Renderer
-  const renderCard = (plan: typeof PLANS[PlanKey], variant: "free" | "monthly" | "quarterly" | "yearly") => {
+  const renderCard = (plan: PlanConfig, variant: "free" | "monthly" | "quarterly" | "yearly") => {
     const isPopular = variant === "monthly";
     const isBestValue = variant === "quarterly";
     const isYearlyLayout = variant === "yearly";
