@@ -166,16 +166,31 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
   // Auto-submit after payment success
   useEffect(() => {
     if (searchParams.get("payment_success") === "true") {
-      // Clean up the URL
       window.history.replaceState(null, "", window.location.pathname);
-      
-      // Wait a moment for form to be populated from profile data, then submit
+
+      // 🔥 FIX: Restore form data from session storage and submit directly
+      const savedData = sessionStorage.getItem("pendingPanForm_Correction");
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          sessionStorage.removeItem("pendingPanForm_Correction");
+
+          setTimeout(() => {
+            onFinalSubmit(parsedData);
+          }, 400);
+          return;
+        } catch (e) {
+          console.error("Failed to parse saved form data", e);
+        }
+      }
+
       const timer = setTimeout(() => {
         handleSubmit(onFinalSubmit, onInvalidSubmit)();
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [searchParams, handleSubmit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Warning on refresh or leave
   useEffect(() => {
@@ -211,7 +226,7 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
     const fetchPreview = async () => {
       const currentHash = JSON.stringify(debouncedValues);
       if (currentHash === lastHash) return;
-      
+
       const hasAnySelection = Object.values(debouncedValues.correctionFields || {}).some(v => v === true);
       if (!debouncedValues.oldPan || !hasAnySelection) {
         setPreviewUrl(null);
@@ -261,20 +276,20 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
   const onInvalidSubmit = (errs: any) => {
     console.log("Validation Failed:", errs);
     for (let i = 1; i <= totalSteps; i++) {
-        const fields = stepFields[i];
-        const hasError = fields.some(f => {
-          const parts = f.split('.');
-          let curr = errs;
-          for (const p of parts) {
-            if (curr && curr[p]) curr = curr[p];
-            else { curr = undefined; break; }
-          }
-          return !!curr;
-        });
-        if (hasError) {
-          setActiveStep(i);
-          return;
+      const fields = stepFields[i];
+      const hasError = fields.some(f => {
+        const parts = f.split('.');
+        let curr = errs;
+        for (const p of parts) {
+          if (curr && curr[p]) curr = curr[p];
+          else { curr = undefined; break; }
         }
+        return !!curr;
+      });
+      if (hasError) {
+        setActiveStep(i);
+        return;
+      }
     }
   };
 
@@ -309,6 +324,10 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
         setPaymentReason(result.reason);
         setPaymentAmount(result.requiresPayment?.amount || 10);
         setWatermarkAvailable(!!result.watermarkAvailable);
+
+        // Save the valid form data before user pays
+        sessionStorage.setItem("pendingPanForm_Correction", JSON.stringify(data));
+
         setShowPaymentModal(true);
         return;
       }
@@ -683,7 +702,7 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
               </div>
             )}
           </AnimatePresence>
-          
+
           {/* Payment Modal */}
           <PaymentRequiredModal
             isOpen={showPaymentModal}

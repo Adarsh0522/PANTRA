@@ -170,14 +170,32 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
     if (searchParams.get("payment_success") === "true") {
       // Clean up the URL
       window.history.replaceState(null, "", window.location.pathname);
-      
-      // Wait a moment for form to be populated from profile data, then submit
+
+      // 🔥 FIX: Restore form data from session storage and submit directly
+      const savedData = sessionStorage.getItem("pendingPanForm_New");
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          sessionStorage.removeItem("pendingPanForm_New"); // Clean up
+
+          // Delay to ensure UI is ready before showing processing modal
+          setTimeout(() => {
+            onFinalSubmit(parsedData);
+          }, 400);
+          return;
+        } catch (e) {
+          console.error("Failed to parse saved form data", e);
+        }
+      }
+
+      // Fallback
       const timer = setTimeout(() => {
         handleSubmit(onFinalSubmit, onInvalidSubmit)();
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [searchParams, handleSubmit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Warning on refresh or leave
   useEffect(() => {
@@ -328,6 +346,10 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
         setPaymentReason(result.reason);
         setPaymentAmount(result.requiresPayment?.amount || 10);
         setWatermarkAvailable(!!result.watermarkAvailable);
+
+        // Save the fully valid form data before user goes to payment gateway
+        sessionStorage.setItem("pendingPanForm_New", JSON.stringify(data));
+
         setShowPaymentModal(true);
         return;
       }
