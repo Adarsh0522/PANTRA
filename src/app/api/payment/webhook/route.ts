@@ -4,6 +4,7 @@ import { payments, subscriptions, users, referrals } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getPlan, type PlanKey } from "@/lib/plans";
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
   try {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
     if (!payment) return NextResponse.json({ error: "Unknown order" }, { status: 404 });
     if (payment.status === "PAID") return NextResponse.json({ status: "already_processed" });
 
-    // 🔥 FRINEXT API BYPASS: Webhook chya Data var vishwas theva
+    // FRINEXT API BYPASS: Webhook chya Data var vishwas theva
     const apiStatus = String(rawStatus).toUpperCase();
 
     if (apiStatus === "COMPLETED" || apiStatus === "SUCCESS") {
@@ -65,14 +66,12 @@ export async function POST(req: Request) {
             default: endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
           }
 
-          const existingSub = await db.query.subscriptions.findFirst({
-            where: eq(subscriptions.user_id, payment.user_id),
-          });
+          // FIX 1: Junya sarv plans la ekach veli deactivate kara (findFirst kadhun takle)
+          await db.update(subscriptions)
+            .set({ is_active: false })
+            .where(eq(subscriptions.user_id, payment.user_id));
 
-          if (existingSub) {
-            await db.update(subscriptions).set({ is_active: false }).where(eq(subscriptions.id, existingSub.id));
-          }
-
+          // Navin plan insert kara
           await db.insert(subscriptions).values({
             id: crypto.randomUUID(),
             user_id: payment.user_id,
@@ -88,18 +87,18 @@ export async function POST(req: Request) {
           const user = await db.query.users.findFirst({
             where: eq(users.id, payment.user_id)
           });
-          
+
           if (user && user.referred_by && !user.is_referral_converted) {
             // Mark user as converted
             await db.update(users)
               .set({ is_referral_converted: true })
               .where(eq(users.id, user.id));
-              
+
             // Increment referrer's converted count
             const referrerProfile = await db.query.referrals.findFirst({
               where: eq(referrals.user_id, user.referred_by)
             });
-            
+
             if (referrerProfile) {
               await db.update(referrals)
                 .set({ converted_users_count: referrerProfile.converted_users_count + 1 })
@@ -125,6 +124,10 @@ export async function POST(req: Request) {
           }
         }
       }
+
+      // FIX 2: Cache clear kar jene karun frontend la fresh DB data milel
+      revalidatePath('/', 'layout');
+
       return NextResponse.json({ status: "verified_and_activated" });
     }
 

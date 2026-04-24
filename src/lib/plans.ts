@@ -70,7 +70,7 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     uiPrice: 999,       // REAL UX PRICE
     period: "month",
     description: "Perfect for daily PAN operators",
-    limit: 150,
+    limit: 4,           // DEBUG: FOR TESTING actual limit is 150
     dailyLimit: 0,
     watermarkLimit: 0,
     watermark: false,
@@ -175,7 +175,7 @@ export async function getPlan(key: PlanKey): Promise<PlanConfig> {
     const record = await db.query.app_plans.findFirst({
       where: eq(app_plans.key, key),
     });
-    
+
     if (record) {
       return {
         key: record.key as PlanKey,
@@ -198,7 +198,7 @@ export async function getPlan(key: PlanKey): Promise<PlanConfig> {
   } catch (error) {
     console.error(`Failed to fetch plan ${key} from DB, falling back to INITIAL_PLANS:`, error);
   }
-  
+
   return INITIAL_PLANS[key];
 }
 
