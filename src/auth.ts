@@ -2,8 +2,8 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
-import { accounts, sessions, users } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { accounts, sessions, users, subscriptions } from "@/db/schema";
+import { eq, asc, and, desc } from "drizzle-orm";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -26,15 +26,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // 1. Session Limit Logic
     async signIn({ user }) {
       if (user.id) {
-        // Fetch all current sessions for this user
         const userSessions = await db.query.sessions.findMany({
           where: eq(sessions.userId, user.id),
           orderBy: [asc(sessions.expires)],
         });
 
-        // Enforce max 2 active sessions limit
         if (userSessions.length >= 2) {
-          // Delete oldest session systematically before creating the new one
           await db
             .delete(sessions)
             .where(eq(sessions.sessionToken, userSessions[0].sessionToken));
@@ -42,16 +39,51 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
+
     // 2. Session Augmentation
     async session({ session, user }) {
-      if (session.user && user) {
-        session.user.id = user.id;
-        // Extend NextAuth session payload securely
-        session.user.mobile_number = (user as any).mobile_number;
-        session.user.center_name = (user as any).center_name;
-        session.user.role = (user as any).role;
+      try {
+        // DB madhun latest active subscription fetch kara
+        const activeSub = await db
+          .select()
+          .from(subscriptions)
+          .where(
+            and(
+              eq(subscriptions.user_id, user.id),
+              eq(subscriptions.is_active, true)
+            )
+          )
+          .orderBy(desc(subscriptions.start_date))
+          .limit(1);
+
+        const currentPlan = activeSub[0] || { plan_type: "free" };
+
+        // 🔥 FIX: Direct mutate karnyacha aivaji navin object return kara
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: user.id,
+            mobile_number: (user as any).mobile_number,
+            center_name: (user as any).center_name,
+            role: (user as any).role,
+            subscription: currentPlan, // <--- Ha data ata frontend la nakki jail
+          },
+        };
+
+      } catch (error) {
+        console.error("🔥 Session fetch error:", error);
+
+        // Fallback in case of error
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: user.id,
+            subscription: { plan_type: "free" },
+          },
+        };
       }
-      return session;
     },
   },
   pages: {

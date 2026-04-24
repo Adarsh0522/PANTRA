@@ -1,20 +1,28 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+// 🔥 FIX: and ani desc import kele
+import { eq, and, desc } from "drizzle-orm";
 
 export async function getCurrentUser() {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  // Fetch active subscription for the user to keep the same API
-  const sub = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.user_id, session.user.id),
-  });
+  // 🔥 FIX: Fakt active plan fetch kara aani latest pahilyanda gya
+  const activeSub = await db
+    .select()
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.user_id, session.user.id),
+        eq(subscriptions.is_active, true)
+      )
+    )
+    .orderBy(desc(subscriptions.start_date))
+    .limit(1);
 
   return {
     ...session.user,
-    subscription: sub,
+    subscription: activeSub[0] || null, // Navin active plan attach kela
   };
 }
-

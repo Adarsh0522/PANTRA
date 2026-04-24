@@ -46,8 +46,8 @@ export default async function SubscriptionPage() {
   if (sub?.last_usage_date) {
     const lastDate = new Date(sub.last_usage_date);
     const now = new Date();
-    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() || 
-      lastDate.getUTCMonth() !== now.getUTCMonth() || 
+    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() ||
+      lastDate.getUTCMonth() !== now.getUTCMonth() ||
       lastDate.getUTCFullYear() !== now.getUTCFullYear();
     if (isDifferentDay) {
       todayDownloadsUsed = 0;
@@ -123,18 +123,31 @@ export default async function SubscriptionPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 2. USAGE SUMMARY */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center">
-          <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider">
+        {/* 2. USAGE SUMMARY (🔥 FIX: Made clickable & Added exact limit count) */}
+        <Link
+          href="/dashboard/activity"
+          className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md group"
+        >
+          <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider group-hover:text-indigo-500 transition-colors">
             <Download className="w-5 h-5 text-indigo-500" />
-            Today's Usage
+            {currentPlan === 'free' ? "Today's Usage" : "Usage"}
           </div>
           <div className="text-5xl font-black text-slate-900 tracking-tighter">
-            {currentPlan === 'free' ? `${todayDownloadsUsed} / 2` : 'Unlimited'}
+            {currentPlan === 'free'
+              ? `${todayDownloadsUsed} / 2`
+              : (sub?.download_limit && sub.download_limit >= 999999)
+                ? 'Unlimited'
+                : `${sub?.downloads_used || 0} / ${sub?.download_limit || 0}`
+            }
           </div>
-          <p className="text-slate-400 text-sm font-medium mt-2">Clean Downloads Used Today</p>
-        </div>
+          <p className="text-slate-400 text-sm font-medium mt-2">
+            {currentPlan === 'free'
+              ? "Clean Downloads Used Today"
+              : "Downloads used in current cycle"}
+          </p>
+        </Link>
 
+        {/* Total Generated Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center">
           <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider">
             <Crown className="w-5 h-5 text-amber-500" />

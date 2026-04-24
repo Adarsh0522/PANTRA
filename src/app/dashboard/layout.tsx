@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Zap, LogOut, Menu } from "lucide-react";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { ContentWrapper } from "@/components/layout/ContentWrapper";
+import { signOut } from "@/auth";
 
 export default async function DashboardLayout({
   children,
@@ -12,10 +13,17 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  console.log("🛠️ Layout User Plan:", user?.subscription?.plan_type);
 
   if (!user) {
     redirect("/login");
   }
+
+  // 🔥 FIX: Server Action for Logout
+  const handleLogout = async () => {
+    "use server";
+    await signOut({ redirectTo: "/login" });
+  };
 
   return (
     <div className="min-h-screen bg-[#e9edf1] flex overflow-x-clip">
@@ -32,7 +40,7 @@ export default async function DashboardLayout({
       <aside className="w-[220px] glass-sidebar flex flex-col fixed inset-y-0 left-0 z-40 text-white transition-transform duration-300 -translate-x-full peer-checked:translate-x-0 md:translate-x-0 overflow-y-auto sidebar-scroll">
         <div className="pt-8 pb-4 flex items-center px-6">
           <Link href="/dashboard" className="flex items-center -ml-1">
-             <Image src="/pantra-logo-transparent.png" alt="PANTRA" width={160} height={45} className="object-contain" style={{ width: "auto" }} priority />
+            <Image src="/pantra-logo-transparent.png" alt="PANTRA" width={160} height={45} className="object-contain" style={{ width: "auto" }} priority />
           </Link>
         </div>
 
@@ -44,7 +52,7 @@ export default async function DashboardLayout({
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative z-10 flex flex-col">
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1.5">Logged in as</div>
-              
+
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className="text-[13px] font-bold text-white truncate max-w-[120px]" title={user.name || "Operator"}>
                   {user.name || "Operator"}
@@ -54,7 +62,8 @@ export default async function DashboardLayout({
                 </div>
               </div>
 
-              <form action="/api/auth/logout" method="POST" className="mt-1 border-t border-white/10 pt-3">
+              {/* 🔥 FIX: Server action bind keli form la */}
+              <form action={handleLogout} className="mt-1 border-t border-white/10 pt-3">
                 <button type="submit" className="flex items-center justify-between w-full gap-2 text-slate-400 hover:text-red-400 font-bold transition-all text-xs group/btn">
                   <span>Sign Out</span>
                   <LogOut className="w-3.5 h-3.5 group-hover/btn:-translate-x-0.5 transition-transform" />
@@ -75,4 +84,3 @@ export default async function DashboardLayout({
     </div>
   );
 }
-

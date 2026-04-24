@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   CheckCircle2,
   XCircle,
@@ -16,6 +17,7 @@ type VerifyStatus = "loading" | "success" | "failed" | "pending";
 function PaymentStatusContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { update } = useSession();
   const orderId = searchParams.get("order_id");
 
   const [status, setStatus] = useState<VerifyStatus>("loading");
@@ -45,6 +47,11 @@ function PaymentStatusContent() {
         if (data.status === "PAID" || data.frinextStatus === "COMPLETED") {
           setStatus("success");
           setPlan(data.plan || "");
+          
+          // 🔥 Refresh session and server components to show new plan
+          await update();
+          router.refresh();
+
           setTimeout(() => {
             const returnUrl = searchParams.get("return_url");
             if (returnUrl) {

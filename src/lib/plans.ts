@@ -39,7 +39,7 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     cta: "Start Free",
     features: [
       "2 downloads per day",
-      "₹10 per extra clean form",
+      "₹10 per extra form",
       "Basic support",
     ],
   },
