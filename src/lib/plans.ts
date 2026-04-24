@@ -66,11 +66,11 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
   monthly: {
     key: "monthly",
     name: "Monthly Plan",
-    price: 1,           // DEBUG: ₹1 for testing
-    uiPrice: 999,       // REAL UX PRICE
+    price: 999,
+    uiPrice: 999,
     period: "month",
     description: "Perfect for daily PAN operators",
-    limit: 4,           // DEBUG: FOR TESTING actual limit is 150
+    limit: 150,
     dailyLimit: 0,
     watermarkLimit: 0,
     watermark: false,

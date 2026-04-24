@@ -16,18 +16,11 @@ export default async function ActivityPage(props: PageProps) {
   if (!user) return null;
 
   const page = parseInt((searchParams?.page as string) || "1", 10);
+
+  // Set page size activity list
   const pageSize = 10;
 
-  const subStartDate = user.subscription?.start_date ? new Date(user.subscription.start_date) : new Date();
-  
-  const currentCycleStart = new Date();
-  currentCycleStart.setDate(subStartDate.getDate());
-  currentCycleStart.setHours(0, 0, 0, 0);
-  
-  if (currentCycleStart > new Date()) {
-    currentCycleStart.setMonth(currentCycleStart.getMonth() - 1);
-  }
-
+  // Fetch all downloads for lifetime history
   const allDownloads = await db
     .select({
       id: download_logs.id,
@@ -41,23 +34,31 @@ export default async function ActivityPage(props: PageProps) {
     .orderBy(desc(download_logs.downloaded_at));
 
   const lifetimeCount = allDownloads.length;
-  const currentCycleDownloads = allDownloads.filter(log => log.downloaded_at >= currentCycleStart);
-  const monthlyCount = currentCycleDownloads.length;
 
-  const totalPages = Math.ceil(monthlyCount / pageSize);
-  const paginatedDownloads = currentCycleDownloads.slice((page - 1) * pageSize, page * pageSize);
+  // 🔥 FIX 2: Paginate using allDownloads instead of currentCycleDownloads
+  // This ensures Pay Per Form records are visible even if they fall outside the current cycle
+  const totalPages = Math.ceil(lifetimeCount / pageSize);
+  const paginatedDownloads = allDownloads.slice((page - 1) * pageSize, page * pageSize);
+
+  // Cycle calculation for the header stats (keep it for info)
+  const subStartDate = user.subscription?.start_date ? new Date(user.subscription.start_date) : new Date();
+  const currentCycleStart = new Date();
+  currentCycleStart.setDate(subStartDate.getDate());
+  currentCycleStart.setHours(0, 0, 0, 0);
+  if (currentCycleStart > new Date()) currentCycleStart.setMonth(currentCycleStart.getMonth() - 1);
+  const monthlyCount = allDownloads.filter(log => log.downloaded_at >= currentCycleStart).length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Activity</h1>
-          <p className="text-slate-500 mt-1 font-medium">View your PDF generations for the current billing cycle.</p>
+          <p className="text-slate-500 mt-1 font-medium">View your complete PDF generation history.</p>
         </div>
-        
+
         <div className="flex gap-4">
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 shadow-sm min-w-[160px]">
-            <p className="text-indigo-500 text-[10px] font-bold uppercase tracking-widest mb-1">Lifetime</p>
+            <p className="text-indigo-500 text-[10px] font-bold uppercase tracking-widest mb-1">Lifetime Generations</p>
             <div className="text-2xl font-black text-indigo-900 tracking-tight">{lifetimeCount}</div>
           </div>
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl p-4 shadow-sm min-w-[160px]">
@@ -71,7 +72,7 @@ export default async function ActivityPage(props: PageProps) {
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <h3 className="font-bold text-slate-800 text-lg">Activity History</h3>
         </div>
-        
+
         {paginatedDownloads.length > 0 ? (
           <>
             <div className="divide-y divide-slate-100">
@@ -80,10 +81,10 @@ export default async function ActivityPage(props: PageProps) {
                 let displayName = "Unknown User";
                 if (payload.first_name) {
                   displayName = [payload.first_name, payload.middle_name, payload.last_name].filter(Boolean).join(' ');
+                } else if (payload.firstName) {
+                  displayName = [payload.firstName, payload.middleName, payload.lastName].filter(Boolean).join(' ');
                 } else if (payload.applicant_name) {
                   displayName = payload.applicant_name;
-                } else if (payload.name) {
-                  displayName = payload.name;
                 }
 
                 return (
@@ -115,7 +116,7 @@ export default async function ActivityPage(props: PageProps) {
             {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
                 <span className="text-sm font-medium text-slate-500">
-                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, monthlyCount)} of {monthlyCount} entries
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, lifetimeCount)} of {lifetimeCount} entries
                 </span>
                 <div className="flex items-center gap-2">
                   {page > 1 ? (
@@ -127,7 +128,7 @@ export default async function ActivityPage(props: PageProps) {
                       <ChevronLeft className="w-4 h-4" />
                     </div>
                   )}
-                  
+
                   <span className="text-sm font-bold text-slate-700 px-2">
                     Page {page} of {totalPages}
                   </span>
@@ -152,7 +153,7 @@ export default async function ActivityPage(props: PageProps) {
             </div>
             <p className="text-slate-800 font-bold mb-1">No activity yet</p>
             <p className="text-slate-500 text-sm font-medium max-w-sm">
-              Your generated and downloaded PAN forms for this cycle will appear here.
+              Your generated and downloaded PAN forms will appear here.
             </p>
           </div>
         )}

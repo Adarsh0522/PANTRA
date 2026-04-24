@@ -40,11 +40,11 @@ export const NEW_PAN_CONFIG: Record<string, any> = {
 
         passport_number: { x: 115.9, y: 194.6, type: 'grid', boxes: 12, box_width: 5.2, height: 4.2 },
 
-        taxpayer_identification_number: { x: 95.2, y: 202.0, type: 'grid', boxes: 20, box_width: 5.2, height: 4.1 },
+        taxpayer_identification_number: { x: 95.2, y: 201.7, type: 'grid', boxes: 20, box_width: 5.2, height: 4.1 },
 
         country_code: { x: 84.7, y: 212.5, type: 'grid', boxes: 3, box_width: 5.2, height: 4.1 },
         mobile: { x: 133.1, y: 212.5, type: 'grid', boxes: 10, box_width: 5.2, height: 4.1 },
-        email: { x: 84.7, y: 217.2, type: 'text', width: 115.2, height: 4.2, transform: 'none' },
+        email: { x: 85.5, y: 217.2, type: 'text', width: 115.2, height: 4.2, transform: 'none' },
         std_code: { x: 84.7, y: 222.0, type: 'grid', boxes: 4, box_width: 5.2, height: 4.1 },
         landline_no: { x: 133.1, y: 222.0, type: 'grid', boxes: 8, box_width: 5.3, height: 4.1 },
 

@@ -53,12 +53,12 @@ export const panFormObject = z.object({
   singleParentType: z.enum(["FATHER", "MOTHER"]).optional(),
   fatherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().min(1, "Middle Name is required"),
+    middleName: z.string().optional(),
     lastName: z.string().optional(),
   }).optional(),
   motherName: z.object({
     firstName: z.string().optional(),
-    middleName: z.string().min(1, "Middle Name is required"),
+    middleName: z.string().optional(),
     lastName: z.string().optional(),
   }).optional(),
   parentToPrint: z.enum(["FATHER", "MOTHER"]),

@@ -56,6 +56,7 @@ export function mapFormToPDF(data: PanFormData): Record<string, any> {
     // Residential Status (Match config: RESIDENT, NRI, RNOR)
     residential_status: data.residentialStatus === "NON_RESIDENT" ? "NRI" : (data.residentialStatus || "RESIDENT"),
     passport_number: data.passportNumber || "",
+    taxpayer_identification_number: data.tin || "",
 
     // Contact
     country_code: data.contact?.countryCode || "91",

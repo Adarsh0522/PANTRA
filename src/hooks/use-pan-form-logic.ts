@@ -18,7 +18,7 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
     resolver: zodResolver(panFormSchema),
     mode: "onChange",
     reValidateMode: "onChange",
-    shouldUnregister: true,
+    shouldUnregister: false,
     defaultValues: {
       firstName: "",
       middleName: "",
@@ -79,7 +79,7 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
     if (initialProfile) {
       const p = initialProfile;
       parsed = {};
-      
+
       // Auto-fill Basic Details into Contact
       if (!parsed.contact) parsed.contact = {};
       if (!parsed.contact.email && p.email) parsed.contact.email = p.email;
@@ -90,7 +90,7 @@ export function usePanFormLogic(initialProfile?: any): UseFormReturn<PanFormData
       // Auto-fill Office Address
       if (!parsed.addresses) parsed.addresses = {};
       if (!parsed.addresses.office) parsed.addresses.office = {};
-      
+
       const o = parsed.addresses.office;
       if (!o.flat && p.flat_door) o.flat = p.flat_door;
       if (!o.road && p.road_street) o.road = p.road_street;
