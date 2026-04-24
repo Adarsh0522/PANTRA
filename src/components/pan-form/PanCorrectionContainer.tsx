@@ -192,34 +192,30 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Warning on refresh or leave
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = ''; // Standard way to show warning dialog
-      return '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
   const currentValues = watch();
   const debouncedValues = useDebounce(currentValues, 1000);
   const [lastHash, setLastHash] = useState("");
+
+  // watch addressType so we know what the user selected
+  const addressType = watch("addressType");
 
   const totalSteps = 5;
 
   const stepFields = useMemo(() => {
     const fields: Record<number, any[]> = {
       1: ["oldPan", "firstName", "lastName", "gender", "dob", "aadhaar", "correctionFields"],
-      2: ["addressType", "addresses.residence", "addresses.office", "correctionFields.address"],
+      // Validate ONLY the address type that is currently selected
+      2: [
+        "addressType",
+        "correctionFields.address",
+        addressType === "OFFICE" ? "addresses.office" : "addresses.residence"
+      ],
       3: ["passportNumber", "tin", "contact.mobile", "contact.email", "contact.isdCode", "contact.stdCode", "contact.landline"],
       4: ["fatherName", "motherName", "parentToPrint"],
       5: ["verification.place", "verification.date", "verification.pronoun", "documents", "correctionFields"],
     };
     return fields;
-  }, []);
+  }, [addressType]);
 
   // Live Preview Logic (Matching New PAN Preview Style)
   useEffect(() => {
@@ -302,7 +298,15 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
     setGeneratedPdfUrl(null);
 
     try {
-      const mapped = mapCorrectionFormToPDF(data);
+      const formattedData = {
+        ...data,
+        contact: {
+          ...data.contact,
+          email: data.contact?.email?.toUpperCase()
+        }
+      };
+
+      const mapped = mapCorrectionFormToPDF(formattedData as any);
       setMappedFormData(mapped);
 
       // ── PHASE 1: Generate PDF (limit check happens server-side) ──

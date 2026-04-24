@@ -37,9 +37,9 @@ export function mapCorrectionFormToPDF(data: PanCorrectionData): Record<string, 
     first_name: correctionFields.firstName ? (data.firstName || "") : "",
     middle_name: correctionFields.middleName ? (data.middleName || "") : "",
     last_name: correctionFields.lastName ? (data.lastName || "") : "",
-    
+
     gender: correctionFields.gender ? (data.gender || "") : "",
-    
+
     dob_day: (correctionFields.dob && dobParts) ? dobParts.day : "",
     dob_month: (correctionFields.dob && dobParts) ? dobParts.month : "",
     dob_year: (correctionFields.dob && dobParts) ? dobParts.year : "",
@@ -68,10 +68,10 @@ export function mapCorrectionFormToPDF(data: PanCorrectionData): Record<string, 
           comm_address: ""
         };
       }
-      
+
       const type = data.addressType || "RESIDENCE";
       const addr = type === "RESIDENCE" ? data.addresses?.residence : data.addresses?.office;
-      
+
       return {
         address_flat: addr?.flat || "",
         address_road: addr?.road || "",
@@ -88,15 +88,15 @@ export function mapCorrectionFormToPDF(data: PanCorrectionData): Record<string, 
     // Contact Mapping (Printable Fields)
     country_code: (correctionFields.mobile || correctionFields.email) ? (data.contact?.isdCode || "91") : "",
     mobile: correctionFields.mobile ? (data.contact?.mobile || "") : "",
-    email: correctionFields.email ? (data.contact?.email || "") : "",
+    email: correctionFields.email ? (data.contact?.email?.toUpperCase() || "") : "",
 
     // Optional Field Mapping (Strict Sync with PDF Config)
     is_passport_changed: correctionFields.passport ? "YES" : "",
     passport_number: correctionFields.passport ? (data.passportNumber || "") : "",
-    
+
     is_taxpayer_identification_number_changed: correctionFields.tin ? "YES" : "",
     taxpayer_identification_number: correctionFields.tin ? (data.tin || "") : "",
-    
+
     country_isd: correctionFields.landline ? (data.contact?.isdCode || "") : "",
     std_code: correctionFields.landline ? (data.contact?.stdCode || "") : "",
     landline_no: correctionFields.landline ? (data.contact?.landline || "") : "",
@@ -105,11 +105,11 @@ export function mapCorrectionFormToPDF(data: PanCorrectionData): Record<string, 
     father_first: correctionFields.fatherName ? (data.fatherName?.firstName || "") : "",
     father_middle: correctionFields.fatherName ? (data.fatherName?.middleName || "") : "",
     father_last: correctionFields.fatherName ? (data.fatherName?.lastName || "") : "",
-    
+
     mother_first: correctionFields.motherName ? (data.motherName?.firstName || "") : "",
     mother_middle: correctionFields.motherName ? (data.motherName?.middleName || "") : "",
     mother_last: correctionFields.motherName ? (data.motherName?.lastName || "") : "",
-    
+
     print_name: data.parentToPrint || "FATHER",
 
     // Document Proofs

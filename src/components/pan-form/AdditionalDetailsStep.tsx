@@ -252,9 +252,9 @@ export function ParentsSection({ register, errors, control, setValue }: SectionP
           <div className="space-y-4 animate-in fade-in duration-300">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Father's Details</p>
             <div className="grid grid-cols-3 gap-6">
-              <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} required />
-              <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} required />
-              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} required />
+              <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} />
+              <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} />
+              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} />
             </div>
           </div>
         )}
@@ -263,9 +263,9 @@ export function ParentsSection({ register, errors, control, setValue }: SectionP
           <div className="space-y-4 animate-in fade-in duration-300 pt-6 border-t border-slate-100">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Mother's Details</p>
             <div className="grid grid-cols-3 gap-6">
-              <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} required />
-              <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} required />
-              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} required />
+              <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} />
+              <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} />
+              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} />
             </div>
           </div>
         )}

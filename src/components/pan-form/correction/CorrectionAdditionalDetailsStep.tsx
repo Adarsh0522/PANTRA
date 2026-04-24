@@ -37,17 +37,17 @@ export function CorrectionContactIncomeSection({ register, errors, control, setV
       <div className="space-y-4">
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Foreign Identification (If Any)</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SharedInput 
-            label="PASSPORT NUMBER" 
-            placeholder="A1234567" 
-            {...register("passportNumber")} 
-            error={errors.passportNumber} 
+          <SharedInput
+            label="PASSPORT NUMBER"
+            placeholder="A1234567"
+            {...register("passportNumber")}
+            error={errors.passportNumber}
           />
-          <SharedInput 
-            label="TAXPAYER ID NUMBER (TIN)" 
-            placeholder="TIN IN COUNTRY OF RESIDENCE" 
-            {...register("tin")} 
-            error={errors.tin} 
+          <SharedInput
+            label="TAXPAYER ID NUMBER (TIN)"
+            placeholder="TIN IN COUNTRY OF RESIDENCE"
+            {...register("tin")}
+            error={errors.tin}
           />
         </div>
       </div>
@@ -106,18 +106,18 @@ export function CorrectionParentsSection({ register, errors, control, setValue }
       <div className="space-y-8">
         <div className="space-y-4">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Father's Details</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} error={errors.fatherName?.firstName} required />
-              <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} error={errors.fatherName?.middleName} required />
-              <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} error={errors.fatherName?.lastName} required />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <SharedInput label="FIRST NAME" placeholder="MOHAN" {...register("fatherName.firstName")} error={errors.fatherName?.firstName} />
+            <SharedInput label="MIDDLE NAME" placeholder="LAL" {...register("fatherName.middleName")} error={errors.fatherName?.middleName} />
+            <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("fatherName.lastName")} error={errors.fatherName?.lastName} />
           </div>
+        </div>
         <div className="space-y-4 pt-8 border-t border-slate-100">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Mother's Details</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} error={errors.motherName?.firstName} required />
-            <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} error={errors.motherName?.middleName} required />
-            <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} error={errors.motherName?.lastName} required />
+            <SharedInput label="FIRST NAME" placeholder="SUNITA" {...register("motherName.firstName")} error={errors.motherName?.firstName} />
+            <SharedInput label="MIDDLE NAME" placeholder="DEVI" {...register("motherName.middleName")} error={errors.motherName?.middleName} />
+            <SharedInput label="LAST NAME" placeholder="SHARMA" {...register("motherName.lastName")} error={errors.motherName?.lastName} />
           </div>
         </div>
       </div>

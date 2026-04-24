@@ -60,7 +60,7 @@ export function mapFormToPDF(data: PanFormData): Record<string, any> {
     // Contact
     country_code: data.contact?.countryCode || "91",
     mobile: data.contact?.mobile || "",
-    email: data.contact?.email || "",
+    email: data.contact?.email?.toUpperCase() || "",
     std_code: data.contact?.stdCode || "",
     landline_no: data.contact?.landline || "",
 
@@ -131,7 +131,7 @@ export function mapFormToPDF(data: PanFormData): Record<string, any> {
         // RA Contact
         ra_country_code: data.raDetails?.countryCode || "91",
         ra_mobile: data.raDetails?.mobile || "",
-        ra_email: data.raDetails?.email || "",
+        ra_email: data.raDetails?.email?.toUpperCase() || "",
         ra_std_code: data.raDetails?.stdCode || "",
         ra_landline: data.raDetails?.landline || "",
       };

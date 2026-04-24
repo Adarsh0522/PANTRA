@@ -197,18 +197,6 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Warning on refresh or leave
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = ''; // Standard way to show warning dialog
-      return '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
   const currentValues = watch();
 
   // Debug: Log validation errors
@@ -324,7 +312,15 @@ export function PanFormContainer({ noPadding = false, initialProfile }: { noPadd
     setGeneratedPdfUrl(null);
 
     try {
-      const mapped = mapFormToPDF(data);
+      const formattedData = {
+        ...data,
+        contact: {
+          ...data.contact,
+          email: data.contact?.email?.toUpperCase()
+        }
+      };
+
+      const mapped = mapFormToPDF(formattedData as any);
       setMappedFormData(mapped);
 
       // ── PHASE 1: Generate PDF (limit check happens server-side) ──
