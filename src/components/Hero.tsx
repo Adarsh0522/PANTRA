@@ -32,7 +32,7 @@ export default function Hero() {
               Generate PAN Forms <br className="hidden sm:block" />
               in{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] to-[#818CF8] whitespace-nowrap">
-                30 Seconds
+                2 Minutes
               </span>
             </h1>
 
