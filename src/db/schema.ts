@@ -98,6 +98,8 @@ export const payments = pgTable('payments', {
   plan_type: text('plan_type').notNull(),     // 'per_form', 'monthly', 'quarterly', 'yearly'
   status: text('status').default('PENDING').notNull(), // 'PENDING' | 'PAID' | 'FAILED'
   frinext_txn_id: text('frinext_txn_id'),
+  razorpay_payment_id: text('razorpay_payment_id'),
+  razorpay_signature: text('razorpay_signature'),
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
 

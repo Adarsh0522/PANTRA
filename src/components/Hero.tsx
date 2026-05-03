@@ -1,10 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowRight, FileText, CheckCircle2, Play, X } from "lucide-react";
 
 export default function Hero() {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
   return (
-    // varun padding wadhawli (pt-16 lg:pt-20) ani khalun kami keli (pb-8 lg:pb-10)
-    <section className="relative bg-[#0B1121] pt-16 pb-8 lg:pt-30 lg:pb-10 overflow-hidden border-b border-white/5">
+    <>
+      {/* varun padding wadhawli (pt-16 lg:pt-20) ani khalun kami keli (pb-8 lg:pb-10) */}
+      <section className="relative bg-[#0B1121] pt-16 pb-8 lg:pt-30 lg:pb-10 overflow-hidden border-b border-white/5">
       {/* Dynamic Colored Background Gradients */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] lg:w-[1000px] lg:h-[1000px] bg-gradient-to-bl from-[#2563EB]/25 via-[#4F46E5]/15 to-transparent rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-[#16A34A]/15 to-transparent rounded-full blur-[100px] pointer-events-none translate-y-1/2 -translate-x-1/3" />
@@ -49,8 +55,11 @@ export default function Hero() {
               >
                 Start Free <ArrowRight className="w-5 h-5" />
               </Link>
-              <button className="flex w-full sm:w-auto flex-1 items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/15 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-base transition-all hover:-translate-y-0.5">
-                <FileText className="w-5 h-5 text-slate-300" /> Watch Demo
+              <button 
+                onClick={() => setIsDemoOpen(true)}
+                className="flex w-full sm:w-auto flex-1 items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/15 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-base transition-all hover:-translate-y-0.5"
+              >
+                <Play className="w-5 h-5 text-slate-300" /> Watch Demo
               </button>
             </div>
 
@@ -71,5 +80,38 @@ export default function Hero() {
         </div>
       </div>
     </section>
+
+      {/* Video Modal */}
+      {isDemoOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setIsDemoOpen(false)}
+          />
+          <div className="relative w-full max-w-4xl bg-[#0B1121] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h3 className="text-lg font-semibold text-white">How PANTRA Works</h3>
+              <button 
+                onClick={() => setIsDemoOpen(false)}
+                className="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative pt-[56.25%] w-full bg-black">
+              <iframe 
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/9kB7jD59MOE?autoplay=1" 
+                title="About Pantra" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerPolicy="strict-origin-when-cross-origin" 
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

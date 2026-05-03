@@ -11,7 +11,7 @@ export default function Home() {
       {/* Clarity Section - What PANTRA Does */}
       <section className="py-16 lg:py-24 bg-white border-t border-slate-200">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="flex flex-col md:flex-row items-center gap-10 lg:gap-14">
+          <div className="flex flex-col md:flex-row items-start gap-10 lg:gap-14">
             <div className="flex-1">
               <h2 className="text-3xl lg:text-4xl font-extrabold text-[#0F172A] mb-6 font-display tracking-tight leading-tight">
                 What PANTRA Does
@@ -33,30 +33,29 @@ export default function Home() {
                   Auto-aligned fields for perfect printing
                 </li>
               </ul>
-              {/* Note Box UI Improvement */}
-              <div className="mt-8 p-4 bg-blue-50/80 border border-blue-200 rounded-xl max-w-xl shadow-sm">
-                <p className="text-sm text-[#1E3A8A] font-semibold leading-relaxed">
-                  <span className="font-bold tracking-wide">Note:</span> PANTRA does NOT apply for PAN cards. It only helps generate correctly filled forms.
-                </p>
-              </div>
             </div>
             {/* Added blue shadow glow for 3D feel */}
-            <div className="flex-1 w-full bg-[#0F172A] p-6 lg:p-10 rounded-3xl shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden group border border-slate-800">
+            <div className="flex-1 w-full bg-[#0F172A] p-2 lg:p-3 rounded-3xl shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden group border border-slate-800">
               <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#3B82F6]/20 to-transparent rounded-full -mr-24 -mt-24 transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#1D4ED8]/20 to-transparent rounded-full -ml-16 -mb-16 transition-transform duration-700 group-hover:scale-110" />
-              <div className="relative bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-2xl transform transition-transform duration-300 group-hover:-translate-y-1">
-                <FileText className="w-10 h-10 text-white mb-5" />
-                <div className="space-y-4">
-                  <div className="h-4 w-3/4 bg-slate-400/30 rounded" />
-                  <div className="h-4 w-1/2 bg-slate-400/30 rounded" />
-                  <div className="h-4 w-2/3 bg-slate-400/30 rounded" />
-                </div>
-                <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                  <span className="px-2.5 py-1 bg-white/10 text-white text-[10px] font-bold rounded-md tracking-wider">OFFICIAL FORMAT</span>
-                  <span className="px-2.5 py-1 bg-[#16A34A]/20 text-[#22C55E] border border-[#16A34A]/30 text-[10px] font-bold rounded-md tracking-wider">NO DATA STORED</span>
-                </div>
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl transform transition-transform duration-500 group-hover:scale-[1.02] bg-[#0B1121]">
+                <video
+                  src="/pantra-preview.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
+          </div>
+
+          {/* Note Box UI Improvement */}
+          <div className="mt-10 md:mt-14 p-4 text-center">
+            <p className="text-sm md:text-base text-[#1E3A8A] font-semibold leading-relaxed">
+              <span className="font-bold tracking-wide">Note:</span> PANTRA does NOT apply for PAN cards. It only helps generate correctly filled forms.
+            </p>
           </div>
         </div>
       </section>

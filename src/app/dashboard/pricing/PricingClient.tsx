@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import type { PlanKey, PlanConfig } from "@/lib/plans";
 import { Check, Zap, Crown, Sparkles, ArrowRight, Shield, Loader2 } from "lucide-react";
 
@@ -18,24 +19,98 @@ export default function PricingClient({ activePlanKey, plans }: { activePlanKey:
     setLoadingPlan(planKey);
 
     try {
-      const res = await fetch("/api/payment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey }),
-      });
+      // 1. Try Razorpay as PRIMARY gateway
+      let rzpFailed = false;
+      try {
+        const rzRes = await fetch("/api/razorpay/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: planKey }),
+        });
 
-      const data = await res.json();
+        if (rzRes.ok) {
+          const rzData = await rzRes.json();
+          
+          if (rzData.order_id) {
+            const options = {
+              key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Exposes public key only
+              amount: rzData.amount,
+              currency: rzData.currency,
+              name: "PANTRA",
+              description: `Payment for ${planKey} plan`,
+              order_id: rzData.order_id,
+              handler: async function (response: any) {
+                // Verify payment after success
+                try {
+                  const verifyRes = await fetch("/api/razorpay/verify-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_signature: response.razorpay_signature,
+                    })
+                  });
+                  
+                  if (verifyRes.ok) {
+                    // Update frontend state/navigation upon success
+                    router.push("/dashboard?payment=success");
+                  } else {
+                    alert("Payment verification failed.");
+                    setLoadingPlan(null);
+                  }
+                } catch (err) {
+                  alert("Error verifying payment.");
+                  setLoadingPlan(null);
+                }
+              },
+              modal: {
+                ondismiss: function() {
+                  setLoadingPlan(null);
+                }
+              }
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+               alert("Razorpay Payment Failed. Code: " + response.error.code);
+               setLoadingPlan(null);
+            });
+            rzp.open();
+            return; // Success opening Razorpay, do not trigger fallback
+          } else {
+            rzpFailed = true;
+          }
+        } else {
+          rzpFailed = true;
+        }
+      } catch (err) {
+        console.error("Razorpay initialization error:", err);
+        rzpFailed = true;
+      }
 
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
-      } else {
-        alert("Payment creation failed. Please try again.");
-        console.error("No payment_url:", data);
+      // 2. Trigger Frinext as FALLBACK if Razorpay fails
+      if (rzpFailed) {
+        console.warn("Razorpay unavailable, falling back to Frinext gateway...");
+        const res = await fetch("/api/payment/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: planKey }),
+        });
+
+        const data = await res.json();
+
+        if (data.payment_url) {
+          window.location.href = data.payment_url;
+        } else {
+          alert("Payment creation failed on both gateways. Please try again.");
+          console.error("No payment_url:", data);
+          setLoadingPlan(null);
+        }
       }
     } catch (err) {
       console.error("Payment error:", err);
       alert("Something went wrong. Please try again.");
-    } finally {
       setLoadingPlan(null);
     }
   }
@@ -213,7 +288,9 @@ export default function PricingClient({ activePlanKey, plans }: { activePlanKey:
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
+    <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-blue-200 mb-2 shadow-sm">
@@ -294,5 +371,6 @@ export default function PricingClient({ activePlanKey, plans }: { activePlanKey:
         </div>
       </div>
     </div>
+    </>
   );
 }

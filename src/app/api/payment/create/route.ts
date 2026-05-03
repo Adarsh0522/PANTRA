@@ -6,6 +6,8 @@ import { getPlanAmount, type PlanKey } from "@/lib/plans";
 import crypto from "crypto";
 import { BASE_URL } from "@/lib/constants";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();

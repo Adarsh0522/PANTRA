@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import {
   X,
   CreditCard,
@@ -53,33 +54,108 @@ export default function PaymentRequiredModal({
   async function handlePayPerForm() {
     setLoading(true);
     try {
-      const res = await fetch("/api/payment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          plan: "per_form",
-          returnUrl: window.location.pathname
-        }),
-      });
+      // 1. Try Razorpay as PRIMARY gateway
+      let rzpFailed = false;
+      try {
+        const rzRes = await fetch("/api/razorpay/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "per_form" }),
+        });
 
-      const data = await res.json();
+        if (rzRes.ok) {
+          const rzData = await rzRes.json();
+          
+          if (rzData.order_id) {
+            const options = {
+              key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+              amount: rzData.amount,
+              currency: rzData.currency,
+              name: "PANTRA",
+              description: "Payment for Single PDF Download",
+              order_id: rzData.order_id,
+              handler: async function (response: any) {
+                try {
+                  const verifyRes = await fetch("/api/razorpay/verify-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_signature: response.razorpay_signature,
+                    })
+                  });
+                  
+                  if (verifyRes.ok) {
+                    window.location.href = window.location.pathname + "?payment_success=true";
+                  } else {
+                    const errText = await verifyRes.text();
+                    alert("Payment verification failed. Server says: " + errText);
+                    setLoading(false);
+                  }
+                } catch (err) {
+                  alert("Error verifying payment: " + String(err));
+                  setLoading(false);
+                }
+              },
+              modal: {
+                ondismiss: function() {
+                  setLoading(false);
+                }
+              }
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+               alert("Razorpay Payment Failed. Code: " + response.error.code);
+               setLoading(false);
+            });
+            rzp.open();
+            return; // Successfully opened Razorpay
+          } else {
+            rzpFailed = true;
+          }
+        } else {
+          rzpFailed = true;
+        }
+      } catch (err) {
+        console.error("Razorpay initialization error:", err);
+        rzpFailed = true;
+      }
 
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
-      } else {
-        alert("Payment creation failed. Please try again.");
+      // 2. Trigger Frinext as FALLBACK if Razorpay fails
+      if (rzpFailed) {
+        console.warn("Razorpay unavailable, falling back to Frinext gateway...");
+        const res = await fetch("/api/payment/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            plan: "per_form",
+            returnUrl: window.location.pathname
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.payment_url) {
+          window.location.href = data.payment_url;
+        } else {
+          alert("Payment creation failed on both gateways. Please try again.");
+          setLoading(false);
+        }
       }
     } catch (err) {
       console.error("Payment error:", err);
       alert("Something went wrong.");
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
         onClick={onClose}
@@ -178,5 +254,6 @@ export default function PaymentRequiredModal({
         </div>
       </div>
     </div>
+    </>
   );
 }

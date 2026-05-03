@@ -322,6 +322,12 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
 
       const result = await response.json();
 
+      if (response.status === 401) {
+        setIsGenerating(false);
+        window.location.href = "/login";
+        return;
+      }
+
       // ── LIMIT HIT: Show ONLY payment modal (no success modal) ──
       if (response.status === 402) {
         setIsGenerating(false);
@@ -380,6 +386,13 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
       });
 
       const result = await response.json();
+
+      if (response.status === 401) {
+        setIsGenerating(false);
+        window.location.href = "/login";
+        return;
+      }
+
       if (!response.ok) throw new Error(result.error || "Generation failed");
 
       setSessionId(result.sessionId);
@@ -408,6 +421,11 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
       });
 
       const result = await response.json();
+
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return null;
+      }
 
       if (response.status === 409) {
         setIsSessionConsumed(true);
@@ -467,21 +485,23 @@ export function PanCorrectionContainer({ initialProfile }: { initialProfile?: an
       }
       if (!pdfUrl) throw new Error("No PDF URL");
 
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = pdfUrl;
-      iframe.onload = () => {
-        const iframeWin = iframe.contentWindow;
-        if (!iframeWin) return;
-        iframeWin.focus();
-        iframeWin.onafterprint = () => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        };
-        iframeWin.print();
-      };
-      document.body.appendChild(iframe);
+      let printUrl = pdfUrl;
+      if (pdfUrl.startsWith("data:application/pdf;base64,")) {
+        const base64Data = pdfUrl.split(",")[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/pdf" });
+        printUrl = URL.createObjectURL(blob);
+      }
+
+      const printWindow = window.open(printUrl, "_blank");
+      if (!printWindow) {
+        alert("Please allow pop-ups to view and print the PDF.");
+      }
     } catch (error) {
       console.error("Print failed:", error);
       alert("Print failed. Please try again.");
