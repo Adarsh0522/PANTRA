@@ -1,14 +1,15 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pantra.in';
-
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard/', '/api/'],
+      disallow: [
+        '/dashboard/',
+        '/api/',
+      ],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: 'https://pantra.in/sitemap.xml',
   };
 }
