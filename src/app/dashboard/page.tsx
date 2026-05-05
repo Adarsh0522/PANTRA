@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getTodayDownloadCount } from "@/lib/download-guard";
-import { getPlan, type PlanKey } from "@/lib/plans";
+import { getPlan, type PlanKey } from "@/lib/plans-db";
 import Link from "next/link";
 import { FilePlus, Clock, Search, Zap, AlertTriangle, Play, CheckCircle2, MessageCircle, HelpCircle, ArrowRight, CreditCard, FileEdit, Crop } from "lucide-react";
 import { db } from "@/db";
@@ -20,41 +20,10 @@ export default async function DashboardPage() {
   const isFree = planKey === 'free';
   const sub = user.subscription;
 
-  // Usage tracking
-  let freeDownloadsUsed = sub?.free_downloads_today || 0;
-  let paidDownloadsUsed = sub?.downloads_used || 0;
-
-  if (sub?.last_usage_date) {
-    const lastDate = new Date(sub.last_usage_date);
-    const now = new Date();
-    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() || 
-      lastDate.getUTCMonth() !== now.getUTCMonth() || 
-      lastDate.getUTCFullYear() !== now.getUTCFullYear();
-    
-    if (isDifferentDay) {
-      freeDownloadsUsed = 0;
-    }
-
-    const isDifferentMonth = lastDate.getUTCMonth() !== now.getUTCMonth() || 
-      lastDate.getUTCFullYear() !== now.getUTCFullYear();
-      
-    if (isDifferentMonth && isFree) {
-      paidDownloadsUsed = 0;
-    }
-  }
-
-  const downloadLimit = sub?.download_limit || 2;
-  const remainingFree = Math.max(0, 2 - freeDownloadsUsed);
-  const remainingPaid = downloadLimit === 999999 ? 'Unlimited' : Math.max(0, downloadLimit - paidDownloadsUsed);
-
-  // Expiry Warning Logic
-  const isPaid = planKey !== 'free' && sub?.end_date;
-  let daysUntilExpiry: number | null = null;
-  if (isPaid && sub?.end_date) {
-    const diff = new Date(sub.end_date).getTime() - new Date().getTime();
-    daysUntilExpiry = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }
-  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 2 && daysUntilExpiry >= 0;
+  // Usage tracking — simple lifetime credits
+  const downloadsUsed = sub?.downloads_used || 0;
+  const downloadLimit = sub?.download_limit || 5;
+  const remainingDownloads = Math.max(0, downloadLimit - downloadsUsed);
 
   // Database Queries
 
@@ -81,20 +50,8 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
 
-      {/* 1. TOP BANNER (DYNAMIC & EXPIRY) */}
-      {isExpiringSoon ? (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="text-red-500 w-6 h-6" />
-            <p className="text-red-800 font-medium">
-              Your plan expires in {daysUntilExpiry === 0 ? "today" : `${daysUntilExpiry} days`}. Upgrade now to avoid interruption.
-            </p>
-          </div>
-          <Link href="/dashboard/pricing" className="bg-red-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition-colors whitespace-nowrap">
-            Renew Now
-          </Link>
-        </div>
-      ) : isFree ? (
+      {/* 1. TOP BANNER */}
+      {isFree ? (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
           <div className="flex items-center gap-5 relative z-10">
             <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md ring-4 ring-white/10 group-hover:scale-110 smooth-transition">
@@ -102,7 +59,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight">You're on the Free Plan</h2>
-              <p className="text-blue-100/80 text-sm font-medium">Get unlimited downloads, zero watermarks, and fast generation.</p>
+              <p className="text-blue-100/80 text-sm font-medium">{remainingDownloads} of {downloadLimit} lifetime downloads remaining. Upgrade for more.</p>
             </div>
           </div>
           <Link
@@ -121,7 +78,7 @@ export default async function DashboardPage() {
                 <CheckCircle2 className="w-5 h-5" />
                 {planKey} Plan Active
               </h2>
-              <p className="text-slate-400 text-sm font-medium">Expire in {daysUntilExpiry !== null ? daysUntilExpiry : '∞'} days • {remainingPaid} downloads remaining</p>
+              <p className="text-slate-400 text-sm font-medium">No expiry • {remainingDownloads} downloads remaining</p>
             </div>
           </div>
           <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
@@ -180,21 +137,21 @@ export default async function DashboardPage() {
 
           {/* 3. USAGE CARD */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="font-bold text-slate-400 text-xs uppercase tracking-widest mb-4">Current Usage</h3>
+            <h3 className="font-bold text-slate-400 text-xs uppercase tracking-widest mb-4">Downloads Used</h3>
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {isFree ? `${freeDownloadsUsed} / 2` : `${paidDownloadsUsed} / ${downloadLimit === 999999 ? '∞' : downloadLimit}`}
+              {downloadsUsed} / {downloadLimit}
             </div>
             <p className="text-slate-500 text-sm font-medium mb-4 mt-1">
-              {isFree ? "Downloads Used Today" : "Downloads Used"}
+              Lifetime Downloads Used
             </p>
 
             <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
               <div
                 className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${Math.min(100, isFree ? (freeDownloadsUsed / 2) * 100 : (downloadLimit === 999999 ? 10 : (paidDownloadsUsed / downloadLimit) * 100))}%` }}
+                style={{ width: `${Math.min(100, (downloadsUsed / downloadLimit) * 100)}%` }}
               />
             </div>
-            {isFree && <p className="text-xs font-semibold text-slate-400 text-right mt-2">{remainingFree} remaining today</p>}
+            <p className="text-xs font-semibold text-slate-400 text-right mt-2">{remainingDownloads} remaining</p>
           </div>
 
           {/* 4. ACCOUNT INFO CARD */}
@@ -209,7 +166,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <div className="text-sm font-medium text-blue-200 mt-2">
-                  {isPaid ? `Expires on ${sub?.end_date ? formatDate(new Date(sub.end_date), 'dd MMM yyyy') : '-'}` : 'Lifetime validity'}
+                  No expiry • {remainingDownloads} downloads remaining
                 </div>
               </div>
               <Link href="/dashboard/subscription" className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors backdrop-blur-sm border border-white/10 mt-1">

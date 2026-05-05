@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { payments } from "@/db/schema";
-import { getPlanAmount, type PlanKey } from "@/lib/plans";
+import { getPlanAmount, type PlanKey } from "@/lib/plans-db";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const { plan } = (await req.json()) as { plan: PlanKey };
 
     // Validate plan
-    const validPlans: PlanKey[] = ["per_form", "monthly", "quarterly", "yearly"];
+    const validPlans: PlanKey[] = ["per_form", "starter", "growth", "pro"];
     if (!validPlans.includes(plan)) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }

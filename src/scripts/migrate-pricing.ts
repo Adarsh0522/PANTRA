@@ -1,4 +1,5 @@
-// Run: npx tsx src/scripts/seed-plans.ts
+// Run: npx tsx src/scripts/migrate-pricing.ts
+// One-time migration script for pricing restructuring
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import { neon } from "@neondatabase/serverless";
@@ -6,47 +7,29 @@ import { neon } from "@neondatabase/serverless";
 const sql = neon(process.env.DATABASE_URL!);
 
 async function main() {
-  console.log("Creating app_plans table if not exists...");
+  console.log("🚀 Starting pricing migration...\n");
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS app_plans (
-      key TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      price INTEGER NOT NULL,
-      ui_price INTEGER,
-      period TEXT NOT NULL,
-      description TEXT NOT NULL,
-      total_limit INTEGER NOT NULL,
-      monthly_limit INTEGER,
-      daily_limit INTEGER NOT NULL DEFAULT 0,
-      watermark_limit INTEGER NOT NULL DEFAULT 0,
-      watermark BOOLEAN NOT NULL DEFAULT false,
-      extra_per_form INTEGER NOT NULL DEFAULT 0,
-      badge TEXT,
-      cta TEXT NOT NULL,
-      features JSONB NOT NULL,
-      sort_order INTEGER NOT NULL
-    )
+  // ─── Step 1: Deactivate old plans ──────────────────────────────────────────
+  console.log("Step 1: Deactivating old plans (monthly_lite, monthly, quarterly, yearly)...");
+  const deactivated = await sql`
+    UPDATE app_plans 
+    SET sort_order = -1 
+    WHERE key IN ('monthly_lite', 'monthly', 'quarterly', 'yearly')
+    RETURNING key
   `;
+  console.log(`  ✓ Deactivated ${deactivated.length} old plans: ${deactivated.map(r => r.key).join(', ') || 'none found'}\n`);
 
-  console.log("Deactivating old plans...");
-  await sql`UPDATE app_plans SET sort_order = -1 WHERE key IN ('monthly_lite', 'monthly', 'quarterly', 'yearly')`;
-
-  console.log("Seeding new plans...");
+  // ─── Step 2: Upsert new plans ─────────────────────────────────────────────
+  console.log("Step 2: Upserting new plans...");
 
   const plans = [
     {
       key: "free",
       name: "Free Plan",
       price: 0,
-      ui_price: null,
       period: "lifetime",
       description: "Start for free",
       total_limit: 5,
-      monthly_limit: null,
-      daily_limit: 0,
-      watermark_limit: 0,
-      watermark: false,
       extra_per_form: 10,
       badge: null,
       cta: "Start Free",
@@ -57,14 +40,9 @@ async function main() {
       key: "per_form",
       name: "Pay Per Form",
       price: 10,
-      ui_price: null,
       period: "per form",
       description: "No subscription needed",
       total_limit: 1,
-      monthly_limit: null,
-      daily_limit: 0,
-      watermark_limit: 0,
-      watermark: false,
       extra_per_form: 10,
       badge: null,
       cta: "Pay & Download",
@@ -75,14 +53,9 @@ async function main() {
       key: "starter",
       name: "Starter Plan",
       price: 299,
-      ui_price: null,
       period: "lifetime",
       description: "Perfect for occasional CSC usage",
       total_limit: 35,
-      monthly_limit: null,
-      daily_limit: 0,
-      watermark_limit: 0,
-      watermark: false,
       extra_per_form: 10,
       badge: null,
       cta: "Get Started",
@@ -93,14 +66,9 @@ async function main() {
       key: "growth",
       name: "Growth Plan",
       price: 499,
-      ui_price: null,
       period: "lifetime",
       description: "Best for regular CSC operators",
       total_limit: 80,
-      monthly_limit: null,
-      daily_limit: 0,
-      watermark_limit: 0,
-      watermark: false,
       extra_per_form: 10,
       badge: "Most Popular",
       cta: "Upgrade Now",
@@ -111,14 +79,9 @@ async function main() {
       key: "pro",
       name: "Pro Plan",
       price: 999,
-      ui_price: null,
       period: "lifetime",
       description: "For high-volume centers",
       total_limit: 150,
-      monthly_limit: null,
-      daily_limit: 0,
-      watermark_limit: 0,
-      watermark: false,
       extra_per_form: 10,
       badge: "Best Value",
       cta: "Upgrade Now",
@@ -131,9 +94,9 @@ async function main() {
     await sql`
       INSERT INTO app_plans (key, name, price, ui_price, period, description, total_limit, monthly_limit, daily_limit, watermark_limit, watermark, extra_per_form, badge, cta, features, sort_order)
       VALUES (
-        ${plan.key}, ${plan.name}, ${plan.price}, ${plan.ui_price},
-        ${plan.period}, ${plan.description}, ${plan.total_limit}, ${plan.monthly_limit},
-        ${plan.daily_limit}, ${plan.watermark_limit}, ${plan.watermark}, ${plan.extra_per_form},
+        ${plan.key}, ${plan.name}, ${plan.price}, ${null},
+        ${plan.period}, ${plan.description}, ${plan.total_limit}, ${null},
+        ${0}, ${0}, ${false}, ${plan.extra_per_form},
         ${plan.badge}, ${plan.cta}, ${plan.features}::jsonb, ${plan.sort_order}
       )
       ON CONFLICT (key) DO UPDATE SET
@@ -153,10 +116,48 @@ async function main() {
         features = EXCLUDED.features,
         sort_order = EXCLUDED.sort_order
     `;
-    console.log(`  ✓ ${plan.key}`);
+    console.log(`  ✓ ${plan.key} (₹${plan.price}, ${plan.total_limit} downloads)`);
   }
 
-  console.log("Done! app_plans seeded successfully with new pricing model.");
+  // ─── Step 3: Verify plans ─────────────────────────────────────────────────
+  console.log("\nStep 2b: Verifying app_plans table...");
+  const allPlans = await sql`SELECT key, name, price, total_limit, sort_order FROM app_plans ORDER BY sort_order`;
+  console.table(allPlans);
+
+  // ─── Step 4: Migrate all users to Free plan ────────────────────────────────
+  console.log("\nStep 3: Migrating all existing users to Free plan...");
+  
+  // First, show current state
+  const beforeCount = await sql`SELECT COUNT(*) as total, plan_type FROM subscriptions GROUP BY plan_type`;
+  console.log("  Before migration:");
+  console.table(beforeCount);
+
+  const migrated = await sql`
+    UPDATE subscriptions SET
+      plan_type = 'free',
+      download_limit = 5,
+      downloads_used = LEAST(downloads_used, 5),
+      is_active = true,
+      end_date = NULL,
+      free_downloads_today = 0,
+      watermark_downloads_today = 0
+    RETURNING id
+  `;
+  console.log(`\n  ✓ Migrated ${migrated.length} subscriptions to Free plan`);
+
+  // Verify after migration
+  const afterCount = await sql`SELECT COUNT(*) as total, plan_type FROM subscriptions GROUP BY plan_type`;
+  console.log("  After migration:");
+  console.table(afterCount);
+
+  console.log("\n✅ Pricing migration complete!");
+  console.log("   - Old plans deactivated");
+  console.log("   - New plans inserted (Free, Starter, Growth, Pro)");
+  console.log("   - All users moved to Free plan (5 lifetime downloads)");
+  console.log("   - Usage preserved where < 5, capped at 5 otherwise");
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("❌ Migration failed:", err);
+  process.exit(1);
+});

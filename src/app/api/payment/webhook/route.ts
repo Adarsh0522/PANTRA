@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { payments, subscriptions, users, referrals } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getPlan, type PlanKey } from "@/lib/plans";
+import { eq, and } from "drizzle-orm";
+import { getPlan, type PlanKey, REFERRAL_REWARDS, MAX_REFERRAL_DOWNLOADS_PER_MONTH } from "@/lib/plans-db";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 
@@ -57,75 +57,44 @@ export async function POST(req: Request) {
 
         if (plan) {
           const now = new Date();
-          let endDate: Date;
 
-          switch (planKey) {
-            case "monthly": endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); break;
-            case "quarterly": endDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); break;
-            case "yearly": endDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); break;
-            default: endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-          }
-
-          // FIX 1: Junya sarv plans la ekach veli deactivate kara (findFirst kadhun takle)
+          // Deactivate old plans
           await db.update(subscriptions)
             .set({ is_active: false })
             .where(eq(subscriptions.user_id, payment.user_id));
 
-          // Navin plan insert kara
+          // Insert new plan — NO expiry, lifetime credits
           await db.insert(subscriptions).values({
             id: crypto.randomUUID(),
             user_id: payment.user_id,
             plan_type: planKey,
             is_active: true,
             downloads_used: 0,
-            download_limit: plan.limit === Infinity ? 999999 : plan.limit,
+            download_limit: plan.downloadLimit,
             start_date: now,
-            end_date: endDate,
+            end_date: null,
           });
-
-          // Process Referral Conversion
-          const user = await db.query.users.findFirst({
-            where: eq(users.id, payment.user_id)
-          });
-
-          if (user && user.referred_by && !user.is_referral_converted) {
-            // Mark user as converted
-            await db.update(users)
-              .set({ is_referral_converted: true })
-              .where(eq(users.id, user.id));
-
-            // Increment referrer's converted count
-            const referrerProfile = await db.query.referrals.findFirst({
-              where: eq(referrals.user_id, user.referred_by)
-            });
-
-            if (referrerProfile) {
-              await db.update(referrals)
-                .set({ converted_users_count: referrerProfile.converted_users_count + 1 })
-                .where(eq(referrals.id, referrerProfile.id));
-            }
-          }
         }
       } else {
-        // Handle "per_form" payment by decrementing usage count
+        // Handle "per_form" payment: add +1 download credit
         const existingSub = await db.query.subscriptions.findFirst({
-          where: eq(subscriptions.user_id, payment.user_id),
+          where: and(
+            eq(subscriptions.user_id, payment.user_id),
+            eq(subscriptions.is_active, true)
+          ),
         });
 
         if (existingSub) {
-          if (existingSub.plan_type === 'free') {
-            await db.update(subscriptions)
-              .set({ free_downloads_today: Math.max(0, existingSub.free_downloads_today - 1) })
-              .where(eq(subscriptions.id, existingSub.id));
-          } else {
-            await db.update(subscriptions)
-              .set({ downloads_used: Math.max(0, existingSub.downloads_used - 1) })
-              .where(eq(subscriptions.id, existingSub.id));
-          }
+          await db.update(subscriptions)
+            .set({ download_limit: (existingSub.download_limit || 0) + 1 })
+            .where(eq(subscriptions.id, existingSub.id));
         }
       }
 
-      // FIX 2: Cache clear kar jene karun frontend la fresh DB data milel
+      // ─── Referral Reward Processing ─────────────────────────────────────
+      await processReferralReward(payment.user_id, payment.plan_type);
+
+      // Cache clear kar jene karun frontend la fresh DB data milel
       revalidatePath('/', 'layout');
 
       return NextResponse.json({ status: "verified_and_activated" });
@@ -135,5 +104,57 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("[Webhook] Error processing:", error);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  }
+}
+
+/**
+ * Process referral reward after a successful payment.
+ * Same logic as verify-payment route.
+ */
+async function processReferralReward(userId: string, planType: string) {
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user || !user.referred_by || user.is_referral_converted) return;
+    if (user.referred_by === userId) return;
+
+    const rewardDownloads = REFERRAL_REWARDS[planType] || 0;
+    if (rewardDownloads === 0) return;
+
+    await db.update(users)
+      .set({ is_referral_converted: true })
+      .where(eq(users.id, userId));
+
+    const referrerProfile = await db.query.referrals.findFirst({
+      where: eq(referrals.user_id, user.referred_by),
+    });
+
+    if (referrerProfile) {
+      await db.update(referrals)
+        .set({ converted_users_count: referrerProfile.converted_users_count + 1 })
+        .where(eq(referrals.id, referrerProfile.id));
+    }
+
+    const referrerSub = await db.query.subscriptions.findFirst({
+      where: and(
+        eq(subscriptions.user_id, user.referred_by),
+        eq(subscriptions.is_active, true)
+      ),
+    });
+
+    if (referrerSub) {
+      const newLimit = Math.min(
+        (referrerSub.download_limit || 0) + rewardDownloads,
+        (referrerSub.download_limit || 0) + MAX_REFERRAL_DOWNLOADS_PER_MONTH
+      );
+
+      await db.update(subscriptions)
+        .set({ download_limit: newLimit })
+        .where(eq(subscriptions.id, referrerSub.id));
+    }
+  } catch (error) {
+    console.error("[Referral] Error processing reward:", error);
   }
 }

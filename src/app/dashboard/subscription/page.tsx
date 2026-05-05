@@ -12,6 +12,12 @@ export default async function SubscriptionPage() {
 
   const currentPlan = user.subscription?.plan_type || 'free';
   const sub = user.subscription;
+  const isFree = currentPlan === 'free';
+
+  // Usage tracking — simple lifetime credits
+  const downloadsUsed = sub?.downloads_used || 0;
+  const downloadLimit = sub?.download_limit || 5;
+  const remainingDownloads = Math.max(0, downloadLimit - downloadsUsed);
 
   // 1. Fetch total PDFs generated
   const totalPdfsResult = await db.select({ count: count() })
@@ -26,33 +32,8 @@ export default async function SubscriptionPage() {
     limit: 5,
   });
 
-  // 3. Calculate Expiry Warning
-  let daysUntilExpiry: number | null = null;
-  const isPaid = currentPlan !== 'free' && sub?.end_date;
-
-  if (isPaid && sub?.end_date) {
-    const diff = new Date(sub.end_date).getTime() - new Date().getTime();
-    daysUntilExpiry = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }
-
-  const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
-  const showExpiryWarning = daysUntilExpiry !== null && daysUntilExpiry <= 2 && daysUntilExpiry >= 0;
-
-  // Format Dates
+  // Format purchase date
   const purchasedOn = sub?.start_date ? formatDate(new Date(sub.start_date), 'dd MMMM yyyy') : '-';
-  const expiresOn = sub?.end_date ? formatDate(new Date(sub.end_date), 'dd MMMM yyyy') : '-';
-
-  let todayDownloadsUsed = sub?.free_downloads_today || 0;
-  if (sub?.last_usage_date) {
-    const lastDate = new Date(sub.last_usage_date);
-    const now = new Date();
-    const isDifferentDay = lastDate.getUTCDate() !== now.getUTCDate() ||
-      lastDate.getUTCMonth() !== now.getUTCMonth() ||
-      lastDate.getUTCFullYear() !== now.getUTCFullYear();
-    if (isDifferentDay) {
-      todayDownloadsUsed = 0;
-    }
-  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
@@ -61,55 +42,38 @@ export default async function SubscriptionPage() {
         <p className="text-slate-500 mt-1 font-medium">Manage your active plan, usage, and billing history.</p>
       </div>
 
-      {/* Expiry Warning Banner */}
-      {showExpiryWarning && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="text-red-500 w-6 h-6" />
-            <p className="text-red-800 font-medium">
-              Your plan expires in {daysUntilExpiry === 0 ? "today" : `${daysUntilExpiry} days`}. Upgrade now to avoid interruption.
-            </p>
-          </div>
-          <Link href="/dashboard/pricing" className="bg-red-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition-colors whitespace-nowrap">
-            Renew Now
-          </Link>
-        </div>
-      )}
-
       {/* 1. CURRENT PLAN SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row gap-0">
         <div className="p-8 flex-1">
           <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 shadow-sm-none">Current Plan</div>
           <div className="text-4xl font-black text-slate-900 capitalize flex items-center gap-3 tracking-tight">
             {currentPlan} Plan
-            {isPaid ? (
-              isExpired ? (
-                <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center gap-1 font-bold">
-                  <XCircle className="w-3.5 h-3.5" /> Expired
-                </span>
-              ) : (
-                <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1 font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Active
-                </span>
-              )
-            ) : null}
+            {!isFree && (
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1 font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Active
+              </span>
+            )}
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row gap-6">
-            {isPaid ? (
+            {!isFree ? (
               <>
                 <div>
                   <div className="text-xs text-slate-400 font-semibold mb-1">Purchased On</div>
                   <div className="text-sm font-bold text-slate-800">{purchasedOn}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 font-semibold mb-1">Expires On</div>
-                  <div className="text-sm font-bold text-slate-800">{expiresOn}</div>
+                  <div className="text-xs text-slate-400 font-semibold mb-1">Validity</div>
+                  <div className="text-sm font-bold text-emerald-600">No Expiry (Lifetime)</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400 font-semibold mb-1">Downloads Remaining</div>
+                  <div className="text-sm font-bold text-slate-800">{remainingDownloads} of {downloadLimit}</div>
                 </div>
               </>
             ) : (
               <div className="text-sm font-bold text-slate-700 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
-                You are on Free Plan (2 downloads/day)
+                You are on Free Plan ({remainingDownloads} of {downloadLimit} downloads remaining)
               </div>
             )}
           </div>
@@ -123,27 +87,20 @@ export default async function SubscriptionPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 2. USAGE SUMMARY (🔥 FIX: Made clickable & Added exact limit count) */}
+        {/* 2. USAGE SUMMARY */}
         <Link
           href="/dashboard/activity"
           className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md group"
         >
           <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider group-hover:text-indigo-500 transition-colors">
             <Download className="w-5 h-5 text-indigo-500" />
-            {currentPlan === 'free' ? "Today's Usage" : "Usage"}
+            Usage
           </div>
           <div className="text-5xl font-black text-slate-900 tracking-tighter">
-            {currentPlan === 'free'
-              ? `${todayDownloadsUsed} / 2`
-              : (sub?.download_limit && sub.download_limit >= 999999)
-                ? 'Unlimited'
-                : `${sub?.downloads_used || 0} / ${sub?.download_limit || 0}`
-            }
+            {downloadsUsed} / {downloadLimit}
           </div>
           <p className="text-slate-400 text-sm font-medium mt-2">
-            {currentPlan === 'free'
-              ? "Clean Downloads Used Today"
-              : "Downloads used in current cycle"}
+            Downloads used (lifetime)
           </p>
         </Link>
 

@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { Pool } from "pg";
-import { INITIAL_PLANS, PlanKey } from "../src/lib/plans";
+import { INITIAL_PLANS, PLAN_ORDER, PlanKey } from "../src/lib/plans";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -34,13 +34,15 @@ async function main() {
     `);
     console.log("Table created.");
 
-    const planKeys: PlanKey[] = ["free", "per_form", "monthly", "quarterly", "yearly"];
+    // Deactivate old plans
+    await client.query(`UPDATE app_plans SET sort_order = -1 WHERE key IN ('monthly_lite', 'monthly', 'quarterly', 'yearly')`);
+    console.log("Old plans deactivated.");
+
+    const planKeys: PlanKey[] = PLAN_ORDER;
     
     for (let i = 0; i < planKeys.length; i++) {
       const key = planKeys[i];
       const plan = INITIAL_PLANS[key];
-      const total_limit = plan.limit === Infinity ? -1 : plan.limit;
-      const monthly_limit = (plan as any).monthlyLimit || null;
       
       await client.query(`
         INSERT INTO "app_plans" (
@@ -65,12 +67,12 @@ async function main() {
           features = EXCLUDED.features,
           sort_order = EXCLUDED.sort_order
       `, [
-        plan.key, plan.name, plan.price, plan.uiPrice || null, plan.period, plan.description,
-        total_limit, monthly_limit, plan.dailyLimit, plan.watermarkLimit, plan.watermark, plan.extraPerForm,
-        plan.badge || null, plan.cta, JSON.stringify(plan.features), i
+        plan.key, plan.name, plan.price, null, "lifetime", plan.description,
+        plan.downloadLimit, null, 0, 0, false, plan.extraPerForm,
+        plan.badge || null, plan.cta, JSON.stringify(plan.features), i + 1
       ]);
     }
-    console.log("Plans seeded successfully.");
+    console.log("Plans seeded successfully with new pricing model.");
   } catch (err) {
     console.error("Error:", err);
   } finally {

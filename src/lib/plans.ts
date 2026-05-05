@@ -1,44 +1,48 @@
 // ─── PANTRA Plan Configuration ───────────────────────────────────────────────
 // Single source of truth for all plan details.
-// Used by: pricing UI, download-guard, payment API, auth mock.
+// ⚠️ This file is imported by BOTH client and server components.
+// DO NOT add any database imports here.
+// For DB functions (getPlans, getPlan), use '@/lib/plans-db' (server-only).
 
-export type PlanKey = "free" | "per_form" | "monthly" | "quarterly" | "yearly";
+export type PlanKey = "free" | "per_form" | "starter" | "growth" | "pro";
 
 export interface PlanConfig {
   key: PlanKey;
   name: string;
-  uiPrice?: number;        // if different from DB price (for testing)
   price: number;           // in ₹
-  period: string;
-  description: string;
-  limit: number;           // total downloads allowed (Infinity = unlimited)
-  monthlyLimit?: number;   // per-month clean downloads
-  dailyLimit: number;      // per-day clean downloads (0 = no daily cap)
-  watermarkLimit: number;  // per-day watermarked downloads
-  watermark: boolean;
-  extraPerForm: number;    // ₹ cost per extra form after limit (0 = not applicable)
+  downloadLimit: number;   // total lifetime downloads allowed
+  extraPerForm: number;    // ₹ cost per extra form after limit
   badge: string | null;    // "Most Popular", "Best Value", etc.
   cta: string;             // CTA button label
+  description: string;
+  perFormValue?: string;   // e.g. "~₹8.5/form" for display
   features: string[];
 }
+
+// ─── Referral reward tiers (downloads credited to referrer) ─────────────────
+export const REFERRAL_REWARDS: Record<string, number> = {
+  per_form: 1,
+  starter: 10,
+  growth: 20,
+  pro: 40,
+};
+
+// Max referral downloads a user can earn per month
+export const MAX_REFERRAL_DOWNLOADS_PER_MONTH = 200;
 
 export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
   free: {
     key: "free",
     name: "Free Plan",
     price: 0,
-    period: "forever",
-    description: "Best for getting started",
-    limit: Infinity,
-    monthlyLimit: 10,
-    dailyLimit: 2,
-    watermarkLimit: 5,
-    watermark: true,
+    downloadLimit: 5,
     extraPerForm: 10,
     badge: null,
     cta: "Start Free",
+    description: "Start for free",
     features: [
-      "2 downloads per day",
+      "5 downloads lifetime",
+      "No expiry",
       "₹10 per extra form",
       "Basic support",
     ],
@@ -47,15 +51,11 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     key: "per_form",
     name: "Pay Per Form",
     price: 10,
-    period: "per form",
-    description: "No subscription needed",
-    limit: Infinity,
-    dailyLimit: 0,
-    watermarkLimit: 0,
-    watermark: false,
+    downloadLimit: 1,
     extraPerForm: 10,
     badge: null,
     cta: "Pay & Download",
+    description: "No subscription needed",
     features: [
       "₹10 per form",
       "No watermark",
@@ -63,147 +63,58 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
       "No subscription needed",
     ],
   },
-  monthly: {
-    key: "monthly",
-    name: "Monthly Plan",
-    price: 999,
-    uiPrice: 999,
-    period: "month",
-    description: "Perfect for daily PAN operators",
-    limit: 150,
-    dailyLimit: 0,
-    watermarkLimit: 0,
-    watermark: false,
-    extraPerForm: 8,
+  starter: {
+    key: "starter",
+    name: "Starter Plan",
+    price: 299,
+    downloadLimit: 35,
+    extraPerForm: 10,
+    badge: null,
+    cta: "Get Started",
+    description: "Perfect for occasional CSC usage",
+    perFormValue: "~₹8.5/form",
+    features: [
+      "35 downloads",
+      "No expiry",
+      "~₹8.5 per form",
+      "No watermark",
+    ],
+  },
+  growth: {
+    key: "growth",
+    name: "Growth Plan",
+    price: 499,
+    downloadLimit: 80,
+    extraPerForm: 10,
     badge: "Most Popular",
     cta: "Upgrade Now",
+    description: "Best for regular CSC operators",
+    perFormValue: "~₹6.25/form",
     features: [
-      "150 downloads included",
-      "No daily limits",
-      "No watermark PDFs",
-      "₹8 per extra form",
+      "80 downloads",
+      "No expiry",
+      "~₹6.25 per form",
+      "No watermark",
     ],
   },
-  quarterly: {
-    key: "quarterly",
-    name: "3 Month Plan",
-    price: 2399,
-    period: "3 months",
-    description: "Save more with higher usage",
-    limit: 600,
-    dailyLimit: 0,
-    watermarkLimit: 0,
-    watermark: false,
-    extraPerForm: 0,
+  pro: {
+    key: "pro",
+    name: "Pro Plan",
+    price: 999,
+    downloadLimit: 150,
+    extraPerForm: 10,
     badge: "Best Value",
     cta: "Upgrade Now",
+    description: "For high-volume centers",
+    perFormValue: "~₹6.6/form",
     features: [
-      "600 total downloads",
-      "No monthly limits",
-      "No watermark PDFs",
-      "Priority support",
-    ],
-  },
-  yearly: {
-    key: "yearly",
-    name: "Yearly Plan",
-    price: 5999,
-    period: "year",
-    description: "For high-volume professionals",
-    limit: Infinity,
-    dailyLimit: 0,
-    watermarkLimit: 0,
-    watermark: false,
-    extraPerForm: 0,
-    badge: "Premium",
-    cta: "Upgrade Now",
-    features: [
-      "Unlimited downloads",
-      "No watermark PDFs",
-      "Fair usage policy",
+      "150 downloads",
+      "No expiry",
+      "~₹6.6 per form",
       "Priority support",
     ],
   },
 } as const;
 
-import { db } from "@/db";
-import { app_plans } from "@/db/schema";
-import { eq } from "drizzle-orm";
-
-// Helper: ordered list for UI rendering
-export const PLAN_ORDER: PlanKey[] = ["free", "per_form", "monthly", "quarterly", "yearly"];
-
-// Fetch all plans from the database
-export async function getPlans(): Promise<PlanConfig[]> {
-  const fallback = PLAN_ORDER.map(key => INITIAL_PLANS[key]);
-
-  const timeout = new Promise<PlanConfig[]>((resolve) =>
-    setTimeout(() => resolve(fallback), 3000)
-  );
-
-  const dbFetch = (async () => {
-    try {
-      const records = await db.select().from(app_plans).orderBy(app_plans.sort_order);
-      if (!records || records.length === 0) return fallback;
-      return records.map(record => ({
-        key: record.key as PlanKey,
-        name: record.name,
-        price: record.price,
-        uiPrice: record.ui_price || undefined,
-        period: record.period,
-        description: record.description,
-        limit: record.total_limit === -1 ? Infinity : record.total_limit,
-        monthlyLimit: record.monthly_limit || undefined,
-        dailyLimit: record.daily_limit,
-        watermarkLimit: record.watermark_limit,
-        watermark: record.watermark,
-        extraPerForm: record.extra_per_form,
-        badge: record.badge,
-        cta: record.cta,
-        features: record.features as string[],
-      }));
-    } catch {
-      return fallback;
-    }
-  })();
-
-  return Promise.race([dbFetch, timeout]);
-}
-
-export async function getPlan(key: PlanKey): Promise<PlanConfig> {
-  try {
-    const record = await db.query.app_plans.findFirst({
-      where: eq(app_plans.key, key),
-    });
-
-    if (record) {
-      return {
-        key: record.key as PlanKey,
-        name: record.name,
-        price: record.price,
-        uiPrice: record.ui_price || undefined,
-        period: record.period,
-        description: record.description,
-        limit: record.total_limit === -1 ? Infinity : record.total_limit,
-        monthlyLimit: record.monthly_limit || undefined,
-        dailyLimit: record.daily_limit,
-        watermarkLimit: record.watermark_limit,
-        watermark: record.watermark,
-        extraPerForm: record.extra_per_form,
-        badge: record.badge,
-        cta: record.cta,
-        features: record.features as string[],
-      };
-    }
-  } catch (error) {
-    console.error(`Failed to fetch plan ${key} from DB, falling back to INITIAL_PLANS:`, error);
-  }
-
-  return INITIAL_PLANS[key];
-}
-
-// Amount lookup — NEVER trust frontend; always derive from this.
-export async function getPlanAmount(plan: PlanKey): Promise<number> {
-  const p = await getPlan(plan);
-  return p.price;
-}
+// Helper: ordered list for UI rendering (excludes per_form — shown separately)
+export const PLAN_ORDER: PlanKey[] = ["free", "starter", "growth", "pro"];

@@ -58,7 +58,7 @@ export const sessions = pgTable('sessions', {
 export const subscriptions = pgTable('subscriptions', {
   id: text('id').primaryKey(),
   user_id: text('user_id').references(() => users.id).notNull(),
-  plan_type: text('plan_type').notNull(), // 'free', 'monthly', 'quarterly', 'yearly'
+  plan_type: text('plan_type').notNull(), // 'free', 'starter', 'growth', 'pro'
   is_active: boolean('is_active').default(true).notNull(),
   downloads_used: integer('downloads_used').default(0).notNull(),
   download_limit: integer('download_limit').default(2).notNull(),
@@ -95,7 +95,7 @@ export const payments = pgTable('payments', {
   user_id: text('user_id').references(() => users.id).notNull(),
   order_id: text('order_id').unique().notNull(),
   amount: integer('amount').notNull(),        // in ₹ (not paise)
-  plan_type: text('plan_type').notNull(),     // 'per_form', 'monthly', 'quarterly', 'yearly'
+  plan_type: text('plan_type').notNull(),     // 'per_form', 'starter', 'growth', 'pro'
   status: text('status').default('PENDING').notNull(), // 'PENDING' | 'PAID' | 'FAILED'
   frinext_txn_id: text('frinext_txn_id'),
   razorpay_payment_id: text('razorpay_payment_id'),

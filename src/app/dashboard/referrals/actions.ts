@@ -3,9 +3,14 @@
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { referrals, subscriptions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Claim referral reward: adds bonus download credits.
+ * Reward: +10 downloads per eligible claim (every 2 converted referrals).
+ * No expiry manipulation — pure download credits.
+ */
 export async function claimReferralReward() {
   try {
     const user = await getCurrentUser();
@@ -28,31 +33,20 @@ export async function claimReferralReward() {
       return { success: false, message: "Not eligible for a reward at this time." };
     }
 
-    // Now, extend subscription by 30 days
+    // Add +10 bonus downloads to the user's active subscription
     const currentSub = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.user_id, user.id)
+      where: and(
+        eq(subscriptions.user_id, user.id),
+        eq(subscriptions.is_active, true)
+      ),
     });
 
-    const now = new Date();
-    let newEndDate = new Date(now);
-    newEndDate.setDate(newEndDate.getDate() + 30); // Base: +30 days from now
+    const REWARD_DOWNLOADS = 10;
 
-    let newPlanType = 'monthly';
-    
     if (currentSub) {
-      if (currentSub.end_date && currentSub.end_date > now) {
-        // Add 30 days to existing active plan
-        newEndDate = new Date(currentSub.end_date);
-        newEndDate.setDate(newEndDate.getDate() + 30);
-      }
-      // If currently free, set it to monthly or promotional
-      newPlanType = currentSub.plan_type === 'free' ? 'monthly' : currentSub.plan_type;
-      
       await db.update(subscriptions)
         .set({
-          end_date: newEndDate,
-          is_active: true,
-          plan_type: newPlanType,
+          download_limit: (currentSub.download_limit || 0) + REWARD_DOWNLOADS,
         })
         .where(eq(subscriptions.id, currentSub.id));
     } else {
@@ -60,11 +54,11 @@ export async function claimReferralReward() {
       await db.insert(subscriptions).values({
         id: crypto.randomUUID(),
         user_id: user.id,
-        plan_type: 'monthly',
+        plan_type: 'free',
         is_active: true,
-        start_date: now,
-        end_date: newEndDate,
-        download_limit: 999999,
+        start_date: new Date(),
+        end_date: null,
+        download_limit: 5 + REWARD_DOWNLOADS,
         downloads_used: 0,
         free_downloads_today: 0,
         watermark_downloads_today: 0,
@@ -81,7 +75,7 @@ export async function claimReferralReward() {
     revalidatePath("/dashboard/referrals");
     revalidatePath("/dashboard");
 
-    return { success: true, message: "Successfully claimed 1 month free!" };
+    return { success: true, message: `Successfully claimed ${REWARD_DOWNLOADS} bonus downloads!` };
   } catch (error) {
     console.error("Reward claim error:", error);
     return { success: false, message: "Internal server error" };

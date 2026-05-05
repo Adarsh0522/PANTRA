@@ -1,6 +1,6 @@
 import PricingClient from "./PricingClient";
 import { getCurrentUser } from "@/lib/auth";
-import { getPlans } from "@/lib/plans";
+import { getPlans } from "@/lib/plans-db";
 
 export const metadata = {
   title: "Pricing | PANTRA",
