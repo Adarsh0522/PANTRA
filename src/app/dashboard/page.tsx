@@ -6,7 +6,7 @@ import { FilePlus, Clock, Search, Zap, AlertTriangle, Play, CheckCircle2, Messag
 import { db } from "@/db";
 import { pan_forms, download_logs } from "@/db/schema";
 import { eq, desc, and, count, gte } from "drizzle-orm";
-import { formatDate } from "date-fns";
+import { formatDate, addDays, isAfter, differenceInDays } from "date-fns";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -24,6 +24,19 @@ export default async function DashboardPage() {
   const downloadsUsed = sub?.downloads_used || 0;
   const downloadLimit = sub?.download_limit || 5;
   const remainingDownloads = Math.max(0, downloadLimit - downloadsUsed);
+
+  // Tools Validity Logic
+  // Prefer the explicit DB date if available, otherwise calculate from plan schema
+  const toolsValidityDays = plan?.toolsValidityDays || 0;
+
+  const toolsValidUntil = sub?.tools_active_until 
+    ? new Date(sub.tools_active_until)
+    : (sub?.start_date && toolsValidityDays > 0 
+        ? addDays(new Date(sub.start_date), toolsValidityDays) 
+        : null);
+    
+  const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
+  const toolsDaysLeft = toolsValidUntil ? differenceInDays(toolsValidUntil, new Date()) : 0;
 
   // Database Queries
 
@@ -113,21 +126,34 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
-          <div className="absolute top-4 right-4 bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-purple-200">
-            Coming Soon
+        <Link href="/dashboard/resizer" className="bg-white shadow-sm border border-slate-200 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1 rounded-2xl p-6 smooth-transition group flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-purple-100 transition-colors" />
+          
+          {/* Tools Validity Badge */}
+          <div className="absolute top-4 right-4 z-10">
+            {isFree ? (
+               <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-1 rounded-full shadow-sm">
+                 1 Free Trial
+               </span>
+            ) : toolsActive ? (
+               <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Active: {toolsDaysLeft}d left
+               </span>
+            ) : (
+               <span className="text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700 px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> Tools Locked
+               </span>
+            )}
           </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-10 -mt-10" />
+
           <div className="relative">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-5 ring-4 ring-white shadow-sm opacity-80">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-purple-500/30 smooth-transition ring-4 ring-white">
               <Crop className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-slate-900 text-lg opacity-80">Crop Aadhaar Card</h3>
-            <p className="text-slate-500 text-sm mt-1 opacity-80">
-              Auto-crop front and back sides of Aadhaar from PDF uploads.
-            </p>
+            <h3 className="font-bold text-slate-900 text-lg">Document Tools</h3>
+            <p className="text-slate-500 text-sm mt-1">Smart photo & signature resizer</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -137,12 +163,12 @@ export default async function DashboardPage() {
 
           {/* 3. USAGE CARD */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="font-bold text-slate-400 text-xs uppercase tracking-widest mb-4">Downloads Used</h3>
+            <h3 className="font-bold text-slate-400 text-xs uppercase tracking-widest mb-4">PAN Credits Remaining</h3>
             <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {downloadsUsed} / {downloadLimit}
+              {remainingDownloads} <span className="text-xl text-slate-400">/ {downloadLimit}</span>
             </div>
             <p className="text-slate-500 text-sm font-medium mb-4 mt-1">
-              Lifetime Downloads Used
+              Lifetime Credits (Never Expires)
             </p>
 
             <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -151,7 +177,7 @@ export default async function DashboardPage() {
                 style={{ width: `${Math.min(100, (downloadsUsed / downloadLimit) * 100)}%` }}
               />
             </div>
-            <p className="text-xs font-semibold text-slate-400 text-right mt-2">{remainingDownloads} remaining</p>
+            <p className="text-xs font-semibold text-slate-400 text-right mt-2">{downloadsUsed} used</p>
           </div>
 
           {/* 4. ACCOUNT INFO CARD */}

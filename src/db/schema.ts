@@ -67,6 +67,7 @@ export const subscriptions = pgTable('subscriptions', {
   last_usage_date: timestamp('last_usage_date').defaultNow().notNull(),
   start_date: timestamp('start_date').defaultNow().notNull(),
   end_date: timestamp('end_date'),
+  tools_active_until: timestamp('tools_active_until'),
 });
 
 // ─── App Plans ───────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ export const app_plans = pgTable('app_plans', {
   cta: text('cta').notNull(),
   features: jsonb('features').notNull(),
   sort_order: integer('sort_order').notNull(),
+  tools_validity_days: integer('tools_validity_days').default(0).notNull(),
 });
 
 // ─── Payments ────────────────────────────────────────────────────────────────

@@ -105,7 +105,7 @@ export async function POST(req: Request) {
  * Rules:
  * - Reward only on first paid transaction from a referred user (is_referral_converted flag)
  * - Prevent self-referrals (same user_id check)
- * - Max 200 referral downloads per month per referrer
+ * - Automatic dual-reward fulfillment (Form vs Sub)
  */
 async function processReferralReward(userId: string, planType: string) {
   try {
@@ -117,9 +117,6 @@ async function processReferralReward(userId: string, planType: string) {
 
     // Prevent self-referral
     if (user.referred_by === userId) return;
-
-    const rewardDownloads = REFERRAL_REWARDS[planType] || 0;
-    if (rewardDownloads === 0) return;
 
     // Mark user as converted (prevents duplicate rewards)
     await db.update(users)
@@ -137,14 +134,7 @@ async function processReferralReward(userId: string, planType: string) {
         .where(eq(referrals.id, referrerProfile.id));
     }
 
-    // Check monthly referral cap for the referrer
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    // Count how many referral downloads the referrer has earned this month
-    // We track this via the converted_users_count increment pattern
-    // For now, apply the reward to the referrer's active subscription
+    // Apply the reward to the referrer's active subscription
     const referrerSub = await db.query.subscriptions.findFirst({
       where: and(
         eq(subscriptions.user_id, user.referred_by),
@@ -152,16 +142,65 @@ async function processReferralReward(userId: string, planType: string) {
       ),
     });
 
-    if (referrerSub) {
-      // Cap the reward to not exceed monthly limit
-      const newLimit = Math.min(
-        (referrerSub.download_limit || 0) + rewardDownloads,
-        (referrerSub.download_limit || 0) + MAX_REFERRAL_DOWNLOADS_PER_MONTH
-      );
+    const now = new Date();
 
-      await db.update(subscriptions)
-        .set({ download_limit: newLimit })
-        .where(eq(subscriptions.id, referrerSub.id));
+    if (planType === "per_form") {
+      // Reward: +1 Free Form
+      if (referrerSub) {
+        await db.update(subscriptions)
+          .set({ download_limit: (referrerSub.download_limit || 0) + 1 })
+          .where(eq(subscriptions.id, referrerSub.id));
+      } else {
+        await db.insert(subscriptions).values({
+          id: crypto.randomUUID(),
+          user_id: user.referred_by,
+          plan_type: 'free',
+          is_active: true,
+          download_limit: 6, // 5 base + 1 reward
+          downloads_used: 0,
+          free_downloads_today: 0,
+          watermark_downloads_today: 0,
+          start_date: now,
+          end_date: null,
+        });
+      }
+    } else {
+      // Reward: 1 Month Free Premium Tools & +35 Forms
+      if (referrerSub) {
+        let currentToolsDate = referrerSub.tools_active_until;
+        
+        // If current tools validity is in the past or null, start from today
+        if (!currentToolsDate || currentToolsDate < now) {
+          currentToolsDate = now;
+        }
+
+        const newToolsDate = new Date(currentToolsDate);
+        newToolsDate.setDate(newToolsDate.getDate() + 30);
+
+        await db.update(subscriptions)
+          .set({ 
+            download_limit: (referrerSub.download_limit || 0) + 35,
+            tools_active_until: newToolsDate,
+          })
+          .where(eq(subscriptions.id, referrerSub.id));
+      } else {
+        const newToolsDate = new Date(now);
+        newToolsDate.setDate(newToolsDate.getDate() + 30);
+
+        await db.insert(subscriptions).values({
+          id: crypto.randomUUID(),
+          user_id: user.referred_by,
+          plan_type: 'free',
+          is_active: true,
+          download_limit: 40, // 5 base + 35 reward
+          downloads_used: 0,
+          free_downloads_today: 0,
+          watermark_downloads_today: 0,
+          start_date: now,
+          end_date: null,
+          tools_active_until: newToolsDate,
+        });
+      }
     }
   } catch (error) {
     // Non-critical: log but don't fail the payment

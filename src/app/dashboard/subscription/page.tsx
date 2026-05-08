@@ -4,7 +4,9 @@ import Link from "next/link";
 import { db } from "@/db";
 import { payments, download_logs, pan_forms, subscriptions } from "@/db/schema";
 import { eq, desc, count } from "drizzle-orm";
-import { formatDate } from "date-fns";
+import { formatDate, addDays, isAfter } from "date-fns";
+import { Wrench } from "lucide-react";
+import { getPlan, type PlanKey } from "@/lib/plans-db";
 
 export default async function SubscriptionPage() {
   const user = await getCurrentUser();
@@ -34,6 +36,18 @@ export default async function SubscriptionPage() {
 
   // Format purchase date
   const purchasedOn = sub?.start_date ? formatDate(new Date(sub.start_date), 'dd MMMM yyyy') : '-';
+
+  // Tools Validity Logic
+  const plan = await getPlan(currentPlan as PlanKey);
+  const toolsValidityDays = plan?.toolsValidityDays || 0;
+
+  const toolsValidUntil = sub?.tools_active_until 
+    ? new Date(sub.tools_active_until)
+    : (sub?.start_date && toolsValidityDays > 0 
+        ? addDays(new Date(sub.start_date), toolsValidityDays) 
+        : null);
+    
+  const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
@@ -86,34 +100,86 @@ export default async function SubscriptionPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 2. USAGE SUMMARY */}
-        <Link
-          href="/dashboard/activity"
-          className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md group"
-        >
-          <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider group-hover:text-indigo-500 transition-colors">
-            <Download className="w-5 h-5 text-indigo-500" />
-            Usage
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card A: PAN Form Wallet */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Download className="w-24 h-24 text-indigo-500" />
           </div>
-          <div className="text-5xl font-black text-slate-900 tracking-tighter">
-            {downloadsUsed} / {downloadLimit}
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <div className="flex items-center gap-3 text-slate-500 font-bold text-sm uppercase tracking-wider group-hover:text-indigo-600 transition-colors">
+              <Download className="w-5 h-5 text-indigo-500" />
+              PAN Form Wallet
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
+              Never Expires
+            </span>
           </div>
-          <p className="text-slate-400 text-sm font-medium mt-2">
-            Downloads used (lifetime)
+          <div className="text-5xl font-black text-slate-900 tracking-tighter relative z-10">
+            {remainingDownloads} <span className="text-2xl text-slate-400 font-bold">/ {downloadLimit}</span>
+          </div>
+          <p className="text-slate-400 text-sm font-medium mt-3 relative z-10">
+            Remaining Credits (Lifetime)
           </p>
-        </Link>
+        </div>
+
+        {/* Card B: Premium Tools Access */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Wrench className="w-24 h-24 text-purple-500" />
+          </div>
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <div className="flex items-center gap-3 text-slate-500 font-bold text-sm uppercase tracking-wider group-hover:text-purple-600 transition-colors">
+              <Wrench className="w-5 h-5 text-purple-500" />
+              Premium Tools Access
+            </div>
+            {isFree ? (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
+                1 Trial / Tool
+              </span>
+            ) : toolsActive ? (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Active
+              </span>
+            ) : (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center gap-1">
+                <XCircle className="w-3 h-3" /> Expired
+              </span>
+            )}
+          </div>
+          <div className="text-3xl font-black text-slate-900 tracking-tight relative z-10">
+            {isFree ? (
+              "Free Tier"
+            ) : toolsValidUntil ? (
+              formatDate(toolsValidUntil, 'dd MMM yyyy')
+            ) : (
+              "-"
+            )}
+          </div>
+          <p className="text-slate-400 text-sm font-medium mt-1 mb-6 relative z-10">
+            {isFree ? "Upgrade for unlimited access" : toolsActive ? "Valid Until" : "Your tools access has expired"}
+          </p>
+          
+          <div className="mt-auto relative z-10">
+            <button className="w-full bg-white border-2 border-purple-100 text-purple-600 hover:bg-purple-50 hover:border-purple-200 font-bold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+              Renew Tools Only (₹99/mo)
+            </button>
+          </div>
+        </div>
 
         {/* Total Generated Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center">
-          <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col justify-center group relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Crown className="w-24 h-24 text-amber-500" />
+          </div>
+          <div className="flex items-center gap-3 text-slate-500 mb-6 font-bold text-sm uppercase tracking-wider relative z-10">
             <Crown className="w-5 h-5 text-amber-500" />
             Total Generated
           </div>
-          <div className="text-5xl font-black text-slate-900 tracking-tighter">
+          <div className="text-5xl font-black text-slate-900 tracking-tighter relative z-10">
             {totalPdfs}
           </div>
-          <p className="text-slate-400 text-sm font-medium mt-2">PDFs Generated (Lifetime)</p>
+          <p className="text-slate-400 text-sm font-medium mt-3 relative z-10">PDFs Generated (Lifetime)</p>
         </div>
       </div>
 

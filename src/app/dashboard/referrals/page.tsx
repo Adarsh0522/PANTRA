@@ -26,9 +26,7 @@ export default async function ReferralsPage() {
     userReferral = newRefs[0];
   }
 
-  const { referred_users_count, converted_users_count, rewards_claimed, referral_code } = userReferral;
-  const eligibleClaims = Math.floor(converted_users_count / 2);
-  const canClaimReward = converted_users_count >= 2 && rewards_claimed < eligibleClaims;
+  const { referred_users_count, converted_users_count, referral_code } = userReferral;
 
   // Fetch Referred Users List
   const referredUsersList = await db.query.users.findMany({
@@ -49,18 +47,17 @@ export default async function ReferralsPage() {
             <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
               <Crown className="w-8 h-8 text-amber-300" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Get 1 Month Free!</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Automatic Rewards!</h2>
           </div>
           
           <p className="text-blue-100 mb-10 text-lg font-medium max-w-2xl leading-relaxed">
-            For every 2 friends you refer who purchase any paid subscription (Monthly, Quarterly, or Yearly), you will instantly unlock 1 month of unlimited access free (worth ₹999).
+            Refer a friend. If they buy a single form, you get 1 Free Form. If they buy a Subscription, you instantly get 1 Month of Premium Tools Free. Rewards are credited automatically!
           </p>
 
           <ReferralClient 
             referralCode={referral_code} 
             referredCount={referred_users_count} 
             convertedCount={converted_users_count} 
-            canClaim={canClaimReward} 
           />
         </div>
 

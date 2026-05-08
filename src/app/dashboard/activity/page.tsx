@@ -2,9 +2,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { download_logs, pan_forms } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { formatDate } from "date-fns";
-import { FilePlus, FileEdit, Clock, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatDate, addDays, isAfter } from "date-fns";
+import { FilePlus, FileEdit, Clock, CheckCircle2, ChevronLeft, ChevronRight, Wrench, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { getPlan, type PlanKey } from "@/lib/plans-db";
 
 interface PageProps {
   searchParams?: Promise<any> | any;
@@ -16,6 +17,7 @@ export default async function ActivityPage(props: PageProps) {
   if (!user) return null;
 
   const page = parseInt((searchParams?.page as string) || "1", 10);
+  const tab = (searchParams?.tab as string) || "pan";
 
   // Set page size activity list
   const pageSize = 10;
@@ -48,12 +50,26 @@ export default async function ActivityPage(props: PageProps) {
   if (currentCycleStart > new Date()) currentCycleStart.setMonth(currentCycleStart.getMonth() - 1);
   const monthlyCount = allDownloads.filter(log => log.downloaded_at >= currentCycleStart).length;
 
+  // Tools Validity Logic
+  const planKey = (user.subscription?.plan_type as string) || 'free';
+  const isFree = planKey === 'free';
+  const plan = await getPlan(planKey as PlanKey);
+  const toolsValidityDays = plan?.toolsValidityDays || 0;
+
+  const toolsValidUntil = user.subscription?.tools_active_until 
+    ? new Date(user.subscription.tools_active_until)
+    : (user.subscription?.start_date && toolsValidityDays > 0 
+        ? addDays(new Date(user.subscription.start_date), toolsValidityDays) 
+        : null);
+    
+  const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Activity</h1>
-          <p className="text-slate-500 mt-1 font-medium">View your complete PDF generation history.</p>
+          <p className="text-slate-500 mt-1 font-medium">View your complete usage and generation history.</p>
         </div>
 
         <div className="flex gap-4">
@@ -68,10 +84,27 @@ export default async function ActivityPage(props: PageProps) {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden text-sm">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 className="font-bold text-slate-800 text-lg">Activity History</h3>
-        </div>
+      {/* TABS COMPONENT */}
+      <div className="flex items-center gap-2 border-b border-slate-200">
+        <Link
+          href="/dashboard/activity?tab=pan"
+          className={`pb-3 px-2 text-sm font-bold border-b-2 transition-colors ${tab === 'pan' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+        >
+          PAN Generation History
+        </Link>
+        <Link
+          href="/dashboard/activity?tab=tools"
+          className={`pb-3 px-2 text-sm font-bold border-b-2 transition-colors ${tab === 'tools' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+        >
+          Premium Tools Usage
+        </Link>
+      </div>
+
+      {tab === 'pan' ? (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden text-sm">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h3 className="font-bold text-slate-800 text-lg">PAN Forms Generated</h3>
+          </div>
 
         {paginatedDownloads.length > 0 ? (
           <>
@@ -158,6 +191,44 @@ export default async function ActivityPage(props: PageProps) {
           </div>
         )}
       </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-8 md:p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+          <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mb-6 ring-8 ring-purple-50/50">
+            <ShieldCheck className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Privacy First Processing</h2>
+          <p className="text-slate-500 font-medium max-w-md mx-auto mb-8">
+            Client-side tool usage is not individually logged to protect your privacy. Your files never leave your browser, so we only track your overarching Tools Validity.
+          </p>
+          
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-purple-500" /> Premium Tools
+              </span>
+              {isFree ? (
+                <span className="text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
+                  Free Tier
+                </span>
+              ) : toolsActive ? (
+                <span className="text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Active
+                </span>
+              ) : (
+                <span className="text-xs font-black uppercase tracking-wider bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center gap-1">
+                  Expired
+                </span>
+              )}
+            </div>
+            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full w-full ${isFree ? 'bg-slate-400' : toolsActive ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+            </div>
+            <p className="text-xs text-slate-500 mt-3 font-medium text-left">
+              {isFree ? "Upgrade to unlock unlimited tools." : toolsActive ? "Your unlimited tools access is active and ready to use." : "Your tools access has expired. Please renew."}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

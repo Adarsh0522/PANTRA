@@ -10,7 +10,7 @@ export default function Hero() {
   return (
     <>
       {/* varun padding wadhawli (pt-16 lg:pt-20) ani khalun kami keli (pb-8 lg:pb-10) */}
-      <section className="relative bg-[#0B1121] pt-16 pb-8 lg:pt-30 lg:pb-10 overflow-hidden border-b border-white/5">
+      <section className="relative bg-[#0B1121] pt-16 pb-8 lg:pt-16 lg:pb-12 overflow-hidden border-b border-white/5">
         {/* Dynamic Colored Background Gradients */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] lg:w-[1000px] lg:h-[1000px] bg-gradient-to-bl from-[#2563EB]/25 via-[#4F46E5]/15 to-transparent rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-[#16A34A]/15 to-transparent rounded-full blur-[100px] pointer-events-none translate-y-1/2 -translate-x-1/3" />
@@ -44,7 +44,7 @@ export default function Hero() {
 
               {/* mb-10 cha mb-6 kela ahe */}
               <p className="text-lg lg:text-xl text-slate-400 max-w-4xl mx-auto leading-relaxed font-medium mb-6">
-                Fill New PAN (93) and PAN Correction (CR-01) instantly with pixel-perfect PDF output — ready for print and submission.
+                Generate Official PAN Forms & Access 7 Premium Document Tools in Seconds.
               </p>
 
               {/* mb-12 cha mb-8 kela ahe */}

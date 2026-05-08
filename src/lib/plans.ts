@@ -16,6 +16,7 @@ export interface PlanConfig {
   cta: string;             // CTA button label
   description: string;
   perFormValue?: string;   // e.g. "~₹8.5/form" for display
+  toolsValidityDays: number; // 0 means no tools, X means X days from start_date
   features: string[];
 }
 
@@ -40,9 +41,10 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     badge: null,
     cta: "Start Free",
     description: "Start for free",
+    toolsValidityDays: 0,
     features: [
-      "5 downloads lifetime",
-      "No expiry",
+      "5 PAN Downloads (Lifetime)",
+      "1 Free Trial per Document Tool",
       "₹10 per extra form",
       "Basic support",
     ],
@@ -56,6 +58,7 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     badge: null,
     cta: "Pay & Download",
     description: "No subscription needed",
+    toolsValidityDays: 0,
     features: [
       "₹10 per form",
       "No watermark",
@@ -73,9 +76,10 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     cta: "Get Started",
     description: "Perfect for occasional CSC usage",
     perFormValue: "~₹8.5/form",
+    toolsValidityDays: 30,
     features: [
-      "35 downloads",
-      "No expiry",
+      "35 PAN Downloads (Lifetime)",
+      "30 Days Unlimited Document Tools",
       "~₹8.5 per form",
       "No watermark",
     ],
@@ -90,9 +94,10 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     cta: "Upgrade Now",
     description: "Best for regular CSC operators",
     perFormValue: "~₹6.25/form",
+    toolsValidityDays: 90,
     features: [
-      "80 downloads",
-      "No expiry",
+      "80 PAN Downloads (Lifetime)",
+      "90 Days Unlimited Document Tools",
       "~₹6.25 per form",
       "No watermark",
     ],
@@ -107,9 +112,10 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     cta: "Upgrade Now",
     description: "For high-volume centers",
     perFormValue: "~₹6.6/form",
+    toolsValidityDays: 365,
     features: [
-      "150 downloads",
-      "No expiry",
+      "150 PAN Downloads (Lifetime)",
+      "365 Days Unlimited Document Tools",
       "~₹6.6 per form",
       "Priority support",
     ],

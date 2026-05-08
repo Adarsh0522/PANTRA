@@ -31,111 +31,157 @@ export default function PricingCards({ plans }: { plans: PlanConfig[] }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
 
           {/* 1. Free Plan */}
-          <div className="relative rounded-2xl p-6 lg:p-8 border bg-white border-slate-200 transition-all duration-300 flex flex-col hover:shadow-lg">
-            <div className="mb-6">
+          <div className="relative rounded-2xl border bg-white border-slate-200 transition-all duration-300 flex flex-col hover:shadow-lg overflow-hidden h-full">
+            {/* Header */}
+            <div className="bg-slate-100 p-6 lg:p-8 border-b border-slate-200">
               <h3 className="text-xl font-bold text-[#0F172A] mb-2">{freePlan.name}</h3>
-              <p className="text-slate-700 h-10 text-xs font-medium leading-relaxed">{freePlan.description}</p>
+              <p className="text-slate-700 text-xs font-medium leading-relaxed">{freePlan.description}</p>
             </div>
-            <div className="mb-6 flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(freePlan)}</span>
-              <span className="text-xs text-slate-600 font-bold">/lifetime</span>
+            {/* Body */}
+            <div className="p-6 lg:p-8 flex flex-col flex-1">
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(freePlan)}</span>
+                <span className="text-xs text-slate-600 font-bold">/lifetime</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {freePlan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
+                    <div className="flex flex-col">
+                      <span>{f}</span>
+                      {f.includes("Document Tool") && (
+                        <span className="text-xs text-slate-500 font-medium mt-1">
+                          (Includes ID Maker, BG Remover + 5 more)
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-slate-100 hover:bg-slate-200 text-[#0F172A] text-center block mt-auto">
+                {freePlan.cta}
+              </Link>
             </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              {freePlan.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-slate-100 hover:bg-slate-200 text-[#0F172A] text-center block">
-              {freePlan.cta}
-            </Link>
           </div>
 
           {/* 2. Starter Plan – ₹299 */}
-          <div className="relative rounded-2xl p-6 lg:p-8 border bg-white border-slate-200 transition-all duration-300 flex flex-col hover:shadow-lg">
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-[#0F172A] mb-2">{starterPlan.name}</h3>
-              <p className="text-slate-700 h-10 text-xs font-medium leading-relaxed">{starterPlan.description}</p>
+          <div className="relative rounded-2xl border bg-white border-blue-100 transition-all duration-300 flex flex-col hover:shadow-lg overflow-hidden h-full">
+            {/* Header */}
+            <div className="bg-blue-50 p-6 lg:p-8 border-b border-blue-100">
+              <h3 className="text-xl font-bold text-blue-700 mb-2">{starterPlan.name}</h3>
+              <p className="text-blue-600/80 text-xs font-medium leading-relaxed">{starterPlan.description}</p>
             </div>
-            <div className="mb-6 flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(starterPlan)}</span>
-              <span className="text-xs text-emerald-600 font-bold ml-2">~₹8.5/form</span>
+            {/* Body */}
+            <div className="p-6 lg:p-8 flex flex-col flex-1">
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(starterPlan)}</span>
+                <span className="text-xs text-emerald-600 font-bold ml-2">~₹8.5/form</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {starterPlan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
+                    <div className="flex flex-col">
+                      <span>{f}</span>
+                      {f.includes("Document Tool") && (
+                        <span className="text-xs text-slate-500 font-medium mt-1">
+                          (Includes ID Maker, BG Remover + 5 more)
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 text-center block mt-auto">
+                {starterPlan.cta}
+              </Link>
             </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              {starterPlan.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#16A34A]" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 text-center block">
-              {starterPlan.cta}
-            </Link>
           </div>
 
           {/* 3. Growth Plan – ₹499 ⭐ Most Popular — Highlighted */}
-          <div className="relative rounded-2xl p-6 lg:p-8 border-2 border-[#2563EB] bg-gradient-to-b from-white to-[#f8faff] shadow-xl md:scale-105 z-10 flex flex-col">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-              <span className="bg-[#2563EB] text-white text-[10px] font-bold uppercase tracking-widest py-1.5 px-4 rounded-full shadow-sm inline-flex items-center gap-1.5">
+          <div className="relative rounded-2xl border-2 border-[#2563EB] bg-white shadow-xl md:scale-105 z-10 flex flex-col overflow-hidden h-full">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+              <span className="bg-[#2563EB] text-white text-[10px] font-bold uppercase tracking-widest py-1.5 px-4 rounded-b-lg shadow-sm inline-flex items-center gap-1.5">
                 <Star className="w-3 h-3" /> Most Popular
               </span>
             </div>
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-[#0F172A] mb-2">{growthPlan.name}</h3>
-              <p className="text-slate-700 h-10 text-xs font-medium leading-relaxed">{growthPlan.description}</p>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 lg:p-8 border-b border-blue-700 pt-10">
+              <h3 className="text-xl font-bold text-white mb-2">{growthPlan.name}</h3>
+              <p className="text-blue-100 text-xs font-medium leading-relaxed">{growthPlan.description}</p>
             </div>
-            <div className="mb-6 flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(growthPlan)}</span>
-              <span className="text-xs text-emerald-600 font-bold ml-2">~₹6.25/form</span>
+            {/* Body */}
+            <div className="p-6 lg:p-8 flex flex-col flex-1 bg-gradient-to-b from-white to-[#f8faff]">
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(growthPlan)}</span>
+                <span className="text-xs text-emerald-600 font-bold ml-2">~₹6.25/form</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {growthPlan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#2563EB]" />
+                    <div className="flex flex-col">
+                      <span>{f}</span>
+                      {f.includes("Document Tool") && (
+                        <span className="text-xs text-slate-500 font-medium mt-1">
+                          (Includes ID Maker, BG Remover + 5 more)
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-center block shadow-md mt-auto">
+                {growthPlan.cta}
+              </Link>
             </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              {growthPlan.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-slate-800 font-semibold text-sm">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5 text-[#2563EB]" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-center block shadow-md">
-              {growthPlan.cta}
-            </Link>
           </div>
 
           {/* 4. Pro Plan – ₹999 🔥 Best Value */}
-          <div className="relative rounded-2xl p-6 lg:p-8 border bg-[#0F172A] border-slate-800 transition-all duration-300 flex flex-col hover:shadow-2xl">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-[#0F172A] text-[10px] font-bold uppercase tracking-widest py-1.5 px-3 rounded-full inline-flex items-center gap-1.5">
+          <div className="relative rounded-2xl border bg-[#0F172A] border-slate-800 transition-all duration-300 flex flex-col hover:shadow-2xl overflow-hidden h-full">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+              <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-[#0F172A] text-[10px] font-bold uppercase tracking-widest py-1.5 px-3 rounded-b-lg inline-flex items-center gap-1.5">
                 <Flame className="w-3 h-3" /> Best Value
               </span>
             </div>
-            <div className="mb-6">
+            {/* Header */}
+            <div className="bg-slate-900 p-6 lg:p-8 border-b border-slate-800 pt-10">
               <h3 className="text-xl font-bold text-white mb-2">{proPlan.name}</h3>
-              <p className="text-slate-400 h-10 text-xs font-medium leading-relaxed">{proPlan.description}</p>
+              <p className="text-amber-400/80 text-xs font-medium leading-relaxed">{proPlan.description}</p>
             </div>
-            <div className="mb-6 flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-white tracking-tight">{getDisplayPrice(proPlan)}</span>
-              <span className="text-xs text-amber-400 font-bold ml-2">~₹6.6/form</span>
+            {/* Body */}
+            <div className="p-6 lg:p-8 flex flex-col flex-1">
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-white tracking-tight">{getDisplayPrice(proPlan)}</span>
+                <span className="text-xs text-amber-400 font-bold ml-2">~₹6.6/form</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {proPlan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-slate-300 font-semibold text-sm">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+                    <div className="flex flex-col">
+                      <span>{f}</span>
+                      {f.includes("Document Tool") && (
+                        <span className="text-xs text-slate-400 font-medium mt-1">
+                          (Includes ID Maker, BG Remover + 5 more)
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-white hover:bg-slate-100 text-[#0F172A] text-center block shadow-md mt-auto">
+                {proPlan.cta}
+              </Link>
             </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              {proPlan.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-slate-300 font-semibold text-sm">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link href="/login" className="w-full py-3 px-4 rounded-xl font-bold transition-colors text-sm bg-white hover:bg-slate-100 text-[#0F172A] text-center block shadow-md">
-              {proPlan.cta}
-            </Link>
           </div>
 
         </div>
+        
+
 
         {/* Pay Per Form Note */}
-        <div className="mt-10 text-center">
+        <div className="mt-8 text-center">
           <div className="inline-flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-6 py-4 shadow-sm">
             <Zap className="w-5 h-5 text-amber-500" />
             <span className="text-slate-800 font-bold text-sm">Pay per form: <span className="text-[#2563EB]">₹10/download</span></span>

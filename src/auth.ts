@@ -6,6 +6,7 @@ import { accounts, sessions, users, subscriptions } from "@/db/schema";
 import { eq, asc, and, desc } from "drizzle-orm";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  basePath: "/api/auth",
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,

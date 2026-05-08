@@ -36,6 +36,7 @@ export async function getPlans(): Promise<PlanConfig[]> {
           badge: record.badge,
           cta: record.cta,
           description: record.description,
+          toolsValidityDays: record.tools_validity_days,
           features: record.features as string[],
         }));
     } catch {
@@ -62,6 +63,7 @@ export async function getPlan(key: PlanKey): Promise<PlanConfig> {
         badge: record.badge,
         cta: record.cta,
         description: record.description,
+        toolsValidityDays: record.tools_validity_days,
         features: record.features as string[],
       };
     }

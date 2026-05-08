@@ -20,12 +20,17 @@ export async function submitOnboarding(formData: FormData) {
     throw new Error("Mobile Number is required");
   }
 
+  // Check if current user already has a referred_by set
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id)
+  });
+
   // Check for referral
   const cookieStore = await cookies();
   const refCode = cookieStore.get("pantra_ref")?.value;
-  let referredById = null;
+  let referredById = currentUser?.referred_by || null;
 
-  if (refCode) {
+  if (refCode && !currentUser?.referred_by) {
     const referrer = await db.query.referrals.findFirst({
       where: eq(referrals.referral_code, refCode),
     });

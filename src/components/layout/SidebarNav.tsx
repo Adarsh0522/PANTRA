@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FilePlus, Clock, ShieldCheck, CreditCard, LucideIcon, UserCog, Gift } from "lucide-react";
+import { LayoutDashboard, FilePlus, Clock, ShieldCheck, CreditCard, LucideIcon, UserCog, Gift, Crop } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItemProps {
@@ -51,6 +51,7 @@ export function SidebarNav() {
       <div className="pt-6 pb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Applications</div>
       <NavItem href="/dashboard/new-pan" icon={FilePlus} label="New PAN Form" />
       <NavItem href="/dashboard/correction-pan" icon={Clock} label="PAN Correction" />
+      <NavItem href="/dashboard/resizer" icon={Crop} label="Document Tools" />
       
       <div className="pt-6 pb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Account</div>
       <NavItem href="/dashboard/profile" icon={UserCog} label="Profile Setup" />
