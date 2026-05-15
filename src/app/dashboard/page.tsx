@@ -38,6 +38,17 @@ export default async function DashboardPage() {
   const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
   const toolsDaysLeft = toolsValidUntil ? differenceInDays(toolsValidUntil, new Date()) : 0;
 
+  // Free Trial logic
+  let remainingTrialDays = 0;
+  if (isFree && !toolsActive) {
+    const createdAt = user.created_at ? new Date(user.created_at as string) : new Date();
+    const trialEnds = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    if (trialEnds > now) {
+      remainingTrialDays = Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }
+  }
+
   // Database Queries
 
   const totalPdfsResult = await db.select({ count: count() })
@@ -73,6 +84,11 @@ export default async function DashboardPage() {
             <div>
               <h2 className="text-xl font-bold tracking-tight">You're on the Free Plan</h2>
               <p className="text-blue-100/80 text-sm font-medium">{remainingDownloads} of {downloadLimit} lifetime downloads remaining. Upgrade for more.</p>
+              {remainingTrialDays > 0 ? (
+                <p className="text-emerald-300 text-sm font-bold mt-1">Premium Tools Trial: {remainingTrialDays} {remainingTrialDays === 1 ? 'day' : 'days'} remaining</p>
+              ) : (
+                <p className="text-red-300 text-sm font-bold mt-1">Premium Tools Trial Expired</p>
+              )}
             </div>
           </div>
           <Link
