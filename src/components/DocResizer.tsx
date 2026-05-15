@@ -31,9 +31,9 @@ const PaywallOverlay = ({ price = 299 }: { price?: number }) => (
   </div>
 );
 
-const FreeBadge = ({ days }: { days: number }) => (
-  <div className="absolute top-4 right-4 z-40 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1 border border-green-200">
-    <span>{days} Days Free Trial</span> 🎁
+const FreeBadge = () => (
+  <div className="absolute top-0 right-0 z-40 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-md flex items-center gap-1">
+    <span>7 Days Free Trial</span> 🎁
   </div>
 );
 
@@ -292,7 +292,7 @@ const Widget: React.FC<WidgetProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -580,7 +580,7 @@ const PdfToImageWidget: React.FC<PdfToImageWidgetProps> = ({ widgetId, hasActive
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -851,7 +851,7 @@ const IdCardMakerWidget: React.FC<IdCardMakerWidgetProps> = ({ widgetId, hasActi
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md col-span-1 md:col-span-3 relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
