@@ -17,8 +17,9 @@ export async function GET() {
                 name: plan.name,
                 price: plan.price,
                 ui_price: null,
-                period: "lifetime",
+                period: plan.period,
                 description: plan.description,
+                subtitle: plan.subtitle || null,
                 total_limit: plan.downloadLimit,
                 monthly_limit: null,
                 daily_limit: 0,
@@ -29,6 +30,7 @@ export async function GET() {
                 cta: plan.cta,
                 features: plan.features,
                 sort_order: index + 1,
+                tools_validity_days: plan.toolsValidityDays,
             };
         });
 

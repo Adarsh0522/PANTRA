@@ -29,6 +29,13 @@
       "when": 1776889602037,
       "tag": "0003_sudden_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778820984081,
+      "tag": "0004_slow_ronan",
+      "breakpoints": true
     }
   ]
 }

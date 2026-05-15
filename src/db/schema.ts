@@ -78,6 +78,7 @@ export const app_plans = pgTable('app_plans', {
   ui_price: integer('ui_price'),
   period: text('period').notNull(),
   description: text('description').notNull(),
+  subtitle: text('subtitle'),
   total_limit: integer('total_limit').notNull(),
   monthly_limit: integer('monthly_limit'),
   daily_limit: integer('daily_limit').notNull(),

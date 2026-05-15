@@ -15,7 +15,8 @@ export interface PlanConfig {
   badge: string | null;    // "Most Popular", "Best Value", etc.
   cta: string;             // CTA button label
   description: string;
-  perFormValue?: string;   // e.g. "~₹8.5/form" for display
+  subtitle?: string;       // e.g. "~₹8.5/form" or "~₹83 per Month"
+  period: string;          // e.g. "lifetime", "monthly", "3 Months", "year"
   toolsValidityDays: number; // 0 means no tools, X means X days from start_date
   features: string[];
 }
@@ -41,12 +42,12 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     badge: null,
     cta: "Start Free",
     description: "Start for free",
-    toolsValidityDays: 0,
+    period: "lifetime",
+    toolsValidityDays: 7,
     features: [
       "5 PAN Downloads (Lifetime)",
-      "1 Free Trial per Document Tool",
+      "7 Days Free Trial per Document Tool",
       "₹10 per extra form",
-      "Basic support",
     ],
   },
   per_form: {
@@ -58,6 +59,7 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     badge: null,
     cta: "Pay & Download",
     description: "No subscription needed",
+    period: "lifetime",
     toolsValidityDays: 0,
     features: [
       "₹10 per form",
@@ -70,53 +72,55 @@ export const INITIAL_PLANS: Record<PlanKey, PlanConfig> = {
     key: "starter",
     name: "Starter Plan",
     price: 299,
-    downloadLimit: 35,
+    downloadLimit: 999999, // Unlimited
     extraPerForm: 10,
     badge: null,
     cta: "Get Started",
     description: "Perfect for occasional CSC usage",
-    perFormValue: "~₹8.5/form",
+    subtitle: "~₹9.96 per Day",
+    period: "monthly",
     toolsValidityDays: 30,
     features: [
-      "35 PAN Downloads (Lifetime)",
-      "30 Days Unlimited Document Tools",
-      "~₹8.5 per form",
-      "No watermark",
+      "Unlimited PAN Downloads",
+      "Unlimited Document Tools",
+      "Basic support",
     ],
   },
   growth: {
     key: "growth",
     name: "Growth Plan",
     price: 499,
-    downloadLimit: 80,
+    downloadLimit: 999999, // Unlimited
     extraPerForm: 10,
     badge: "Most Popular",
     cta: "Upgrade Now",
     description: "Best for regular CSC operators",
-    perFormValue: "~₹6.25/form",
+    subtitle: "~₹166 per Month",
+    period: "3 Months",
     toolsValidityDays: 90,
     features: [
-      "80 PAN Downloads (Lifetime)",
-      "90 Days Unlimited Document Tools",
-      "~₹6.25 per form",
-      "No watermark",
+      "Unlimited PAN Downloads",
+      "Unlimited Document Tools",
+      "~₹5.54 per Day",
+      "priority support",
     ],
   },
   pro: {
     key: "pro",
     name: "Pro Plan",
     price: 999,
-    downloadLimit: 150,
+    downloadLimit: 999999, // Unlimited
     extraPerForm: 10,
     badge: "Best Value",
     cta: "Upgrade Now",
     description: "For high-volume centers",
-    perFormValue: "~₹6.6/form",
+    subtitle: "~₹83 per Month",
+    period: "year",
     toolsValidityDays: 365,
     features: [
-      "150 PAN Downloads (Lifetime)",
-      "365 Days Unlimited Document Tools",
-      "~₹6.6 per form",
+      "Unlimited PAN Downloads",
+      "Unlimited Document Tools",
+      "~₹2.74 per Day",
       "Priority support",
     ],
   },

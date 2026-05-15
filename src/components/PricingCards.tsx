@@ -41,7 +41,7 @@ export default function PricingCards({ plans }: { plans: PlanConfig[] }) {
             <div className="p-6 lg:p-8 flex flex-col flex-1">
               <div className="mb-6 flex items-baseline gap-1">
                 <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(freePlan)}</span>
-                <span className="text-xs text-slate-600 font-bold">/lifetime</span>
+                <span className="text-xs text-slate-600 font-bold">/{freePlan.period}</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {freePlan.features.map((f, i) => (
@@ -73,9 +73,12 @@ export default function PricingCards({ plans }: { plans: PlanConfig[] }) {
             </div>
             {/* Body */}
             <div className="p-6 lg:p-8 flex flex-col flex-1">
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(starterPlan)}</span>
-                <span className="text-xs text-emerald-600 font-bold ml-2">~₹8.5/form</span>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-baseline gap-1">
+                <div>
+                  <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(starterPlan)}</span>
+                  <span className="text-sm text-slate-500 font-bold ml-1">/{starterPlan.period}</span>
+                </div>
+                <span className="text-xs text-emerald-600 font-bold sm:ml-2 mt-1 sm:mt-0">{starterPlan.subtitle}</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {starterPlan.features.map((f, i) => (
@@ -112,9 +115,12 @@ export default function PricingCards({ plans }: { plans: PlanConfig[] }) {
             </div>
             {/* Body */}
             <div className="p-6 lg:p-8 flex flex-col flex-1 bg-gradient-to-b from-white to-[#f8faff]">
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(growthPlan)}</span>
-                <span className="text-xs text-emerald-600 font-bold ml-2">~₹6.25/form</span>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-baseline gap-1">
+                <div>
+                  <span className="text-4xl font-extrabold text-[#0F172A] tracking-tight">{getDisplayPrice(growthPlan)}</span>
+                  <span className="text-sm text-slate-500 font-bold ml-1">/{growthPlan.period}</span>
+                </div>
+                <span className="text-xs text-emerald-600 font-bold sm:ml-2 mt-1 sm:mt-0">{growthPlan.subtitle}</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {growthPlan.features.map((f, i) => (
@@ -151,9 +157,12 @@ export default function PricingCards({ plans }: { plans: PlanConfig[] }) {
             </div>
             {/* Body */}
             <div className="p-6 lg:p-8 flex flex-col flex-1">
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-white tracking-tight">{getDisplayPrice(proPlan)}</span>
-                <span className="text-xs text-amber-400 font-bold ml-2">~₹6.6/form</span>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-baseline gap-1">
+                <div>
+                  <span className="text-4xl font-extrabold text-white tracking-tight">{getDisplayPrice(proPlan)}</span>
+                  <span className="text-sm text-slate-400 font-bold ml-1">/{proPlan.period}</span>
+                </div>
+                <span className="text-xs text-amber-400 font-bold sm:ml-2 mt-1 sm:mt-0">{proPlan.subtitle}</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 {proPlan.features.map((f, i) => (
