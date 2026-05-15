@@ -41,10 +41,10 @@ export default async function DashboardPage() {
   // Free Trial logic
   let remainingTrialDays = 0;
   if (isFree && !toolsActive) {
-    const createdAt = user.created_at ? new Date(user.created_at as string) : new Date();
+    const createdAt = user.created_at ? new Date(user.created_at) : new Date();
     const trialEnds = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
     const now = new Date();
-    if (trialEnds > now) {
+    if (!isNaN(trialEnds.getTime()) && trialEnds > now) {
       remainingTrialDays = Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     }
   }
