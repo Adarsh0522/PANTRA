@@ -48,6 +48,17 @@ export default async function SubscriptionPage() {
       : null);
 
   const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
+  
+  // Free Trial logic for dynamic badge
+  let remainingTrialDays = 0;
+  if (isFree && !toolsActive) {
+    const createdAt = user.created_at ? new Date(user.created_at) : new Date();
+    const trialEnds = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    if (!isNaN(trialEnds.getTime()) && trialEnds > now) {
+      remainingTrialDays = Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
@@ -132,7 +143,7 @@ export default async function SubscriptionPage() {
             </div>
             {isFree ? (
               <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
-                7 Days Free Trial
+                {remainingTrialDays} Days Trial Left
               </span>
             ) : toolsActive ? (
               <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
