@@ -41,12 +41,12 @@ export default async function SubscriptionPage() {
   const plan = await getPlan(currentPlan as PlanKey);
   const toolsValidityDays = plan?.toolsValidityDays || 0;
 
-  const toolsValidUntil = sub?.tools_active_until 
+  const toolsValidUntil = sub?.tools_active_until
     ? new Date(sub.tools_active_until)
-    : (sub?.start_date && toolsValidityDays > 0 
-        ? addDays(new Date(sub.start_date), toolsValidityDays) 
-        : null);
-    
+    : (sub?.start_date && toolsValidityDays > 0
+      ? addDays(new Date(sub.start_date), toolsValidityDays)
+      : null);
+
   const toolsActive = toolsValidUntil ? isAfter(toolsValidUntil, new Date()) : false;
 
   return (
@@ -111,9 +111,6 @@ export default async function SubscriptionPage() {
               <Download className="w-5 h-5 text-indigo-500" />
               PAN Form Wallet
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
-              Never Expires
-            </span>
           </div>
           <div className="text-5xl font-black text-slate-900 tracking-tighter relative z-10">
             {remainingDownloads} <span className="text-2xl text-slate-400 font-bold">/ {downloadLimit}</span>
@@ -135,7 +132,7 @@ export default async function SubscriptionPage() {
             </div>
             {isFree ? (
               <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 px-3 py-1 rounded-full">
-                1 Trial / Tool
+                7 Days Free Trial
               </span>
             ) : toolsActive ? (
               <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
@@ -159,12 +156,7 @@ export default async function SubscriptionPage() {
           <p className="text-slate-400 text-sm font-medium mt-1 mb-6 relative z-10">
             {isFree ? "Upgrade for unlimited access" : toolsActive ? "Valid Until" : "Your tools access has expired"}
           </p>
-          
-          <div className="mt-auto relative z-10">
-            <button className="w-full bg-white border-2 border-purple-100 text-purple-600 hover:bg-purple-50 hover:border-purple-200 font-bold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
-              Renew Tools Only (₹99/mo)
-            </button>
-          </div>
+
         </div>
 
         {/* Total Generated Card */}
