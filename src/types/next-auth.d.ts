@@ -10,6 +10,7 @@ declare module "next-auth" {
       mobile_number?: string | null;
       center_name?: string | null;
       role?: string | null;
+      created_at?: Date | string | null;
     } & DefaultSession["user"];
   }
 
@@ -17,5 +18,6 @@ declare module "next-auth" {
     mobile_number?: string | null;
     center_name?: string | null;
     role?: string | null;
+    created_at?: Date | string | null;
   }
 }

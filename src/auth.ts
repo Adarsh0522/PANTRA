@@ -68,6 +68,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             mobile_number: (user as any).mobile_number,
             center_name: (user as any).center_name,
             role: (user as any).role,
+            created_at: (user as any).created_at, // Passed for 7-day trial check
             subscription: currentPlan, // <--- Ha data ata frontend la nakki jail
           },
         };

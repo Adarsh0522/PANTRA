@@ -23,17 +23,17 @@ const PaywallOverlay = ({ price = 299 }: { price?: number }) => (
     <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm border border-red-100">
       <Lock className="w-8 h-8" />
     </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-2">Free Trial Consumed</h3>
-    <p className="text-sm text-gray-600 mb-6 max-w-xs">You've successfully used your 1 free trial for this tool. Upgrade to unlock unlimited processing.</p>
+    <h3 className="text-xl font-bold text-gray-900 mb-2">Access Expired</h3>
+    <p className="text-sm text-gray-600 mb-6 max-w-xs">Your free trial or subscription has expired. Upgrade to unlock unlimited document processing tools.</p>
     <Link href="/dashboard/pricing" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-2 shadow-sm transition-all hover:shadow-md">
       Upgrade Now (₹{price})
     </Link>
   </div>
 );
 
-const FreeBadge = () => (
+const FreeBadge = ({ days }: { days: number }) => (
   <div className="absolute top-4 right-4 z-40 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1 border border-green-200">
-    <span>1 Free Trial</span> 🎁
+    <span>{days} Days Free Trial</span> 🎁
   </div>
 );
 
@@ -149,8 +149,8 @@ type StepState = 'upload' | 'crop' | 'preview';
 
 interface WidgetProps {
   widgetId: string;
-  usageCount: number;
-  maxFreeLimit: number;
+  hasActiveTools: boolean;
+  remainingTrialDays: number;
   onProcessSuccess: () => void;
 
   title: string;
@@ -175,12 +175,12 @@ interface WidgetProps {
 }
 
 const Widget: React.FC<WidgetProps> = ({
-  widgetId, usageCount, maxFreeLimit, onProcessSuccess,
+  widgetId, hasActiveTools, remainingTrialDays, onProcessSuccess,
   title, description, accept, icon, defaultFileName,
   isCroppable, cropAspect, cropWidth, cropHeight, targetMinKB, targetMaxKB,
   isDocumentProcessor, onProcessDocument, processingText, processingSubText, showBgColorPicker
 }) => {
-  const isLocked = usageCount >= maxFreeLimit;
+  const isLocked = !hasActiveTools;
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<StepState>('upload');
 
@@ -292,7 +292,7 @@ const Widget: React.FC<WidgetProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && usageCount === 0 && <FreeBadge />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -497,13 +497,13 @@ interface PdfPage {
 
 interface PdfToImageWidgetProps {
   widgetId: string;
-  usageCount: number;
-  maxFreeLimit: number;
+  hasActiveTools: boolean;
+  remainingTrialDays: number;
   onProcessSuccess: () => void;
 }
 
-const PdfToImageWidget: React.FC<PdfToImageWidgetProps> = ({ widgetId, usageCount, maxFreeLimit, onProcessSuccess }) => {
-  const isLocked = usageCount >= maxFreeLimit;
+const PdfToImageWidget: React.FC<PdfToImageWidgetProps> = ({ widgetId, hasActiveTools, remainingTrialDays, onProcessSuccess }) => {
+  const isLocked = !hasActiveTools;
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<StepState>('upload');
   const [pages, setPages] = useState<PdfPage[]>([]);
@@ -580,7 +580,7 @@ const PdfToImageWidget: React.FC<PdfToImageWidgetProps> = ({ widgetId, usageCoun
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && usageCount === 0 && <FreeBadge />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -677,15 +677,15 @@ const PdfToImageWidget: React.FC<PdfToImageWidgetProps> = ({ widgetId, usageCoun
 
 interface IdCardMakerWidgetProps {
   widgetId: string;
-  usageCount: number;
-  maxFreeLimit: number;
+  hasActiveTools: boolean;
+  remainingTrialDays: number;
   onProcessSuccess: () => void;
 }
 
 type IdStepState = 'upload_front' | 'password_front' | 'crop_front' | 'upload_back' | 'password_back' | 'crop_back' | 'preview';
 
-const IdCardMakerWidget: React.FC<IdCardMakerWidgetProps> = ({ widgetId, usageCount, maxFreeLimit, onProcessSuccess }) => {
-  const isLocked = usageCount >= maxFreeLimit;
+const IdCardMakerWidget: React.FC<IdCardMakerWidgetProps> = ({ widgetId, hasActiveTools, remainingTrialDays, onProcessSuccess }) => {
+  const isLocked = !hasActiveTools;
   const [step, setStep] = useState<IdStepState>('upload_front');
   const [status, setStatus] = useState<ProcessingState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -851,7 +851,7 @@ const IdCardMakerWidget: React.FC<IdCardMakerWidgetProps> = ({ widgetId, usageCo
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-full transition-all hover:shadow-md col-span-1 md:col-span-3 relative overflow-hidden">
       {isLocked && <PaywallOverlay />}
-      {!isLocked && usageCount === 0 && <FreeBadge />}
+      {!isLocked && remainingTrialDays > 0 && <FreeBadge days={remainingTrialDays} />}
       <div className={`flex flex-col flex-1 ${isLocked ? 'opacity-30 blur-[2px] pointer-events-none select-none' : ''}`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -1030,34 +1030,9 @@ const IdCardMakerWidget: React.FC<IdCardMakerWidgetProps> = ({ widgetId, usageCo
 // Main Application Component
 // ----------------------------------------------------------------------
 
-export default function DocResizer() {
-  const [toolUsage, setToolUsage] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    const saved = localStorage.getItem('pantra_tool_usage');
-    if (saved) {
-      try {
-        setToolUsage(JSON.parse(saved));
-      } catch (e) { }
-    } else {
-      setToolUsage({
-        photoProcessor: 0,
-        signatureProcessor: 0,
-        docResizer: 0,
-        bgRemover: 0,
-        passportMaker: 0,
-        pdfToImage: 0,
-        idCardMaker: 0
-      });
-    }
-  }, []);
-
+export default function DocResizer({ hasActiveTools = false, remainingTrialDays = 0 }: { hasActiveTools?: boolean, remainingTrialDays?: number }) {
   const handleUsageIncrement = useCallback((widgetId: string) => {
-    setToolUsage(prev => {
-      const updated = { ...prev, [widgetId]: (prev[widgetId] || 0) + 1 };
-      localStorage.setItem('pantra_tool_usage', JSON.stringify(updated));
-      return updated;
-    });
+    // Analytics tracking could go here, usage limit logic removed.
   }, []);
 
   const processRemoveBackground = async (file: File): Promise<Blob> => {
@@ -1270,8 +1245,8 @@ export default function DocResizer() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Widget
           widgetId="photoProcessor"
-          usageCount={toolUsage.photoProcessor || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('photoProcessor')}
           title="Photo Processor"
           description="Manual crop, exact 160x200px, Upto 20KB."
@@ -1289,8 +1264,8 @@ export default function DocResizer() {
 
         <Widget
           widgetId="signatureProcessor"
-          usageCount={toolUsage.signatureProcessor || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('signatureProcessor')}
           title="Signature Processor"
           description="Manual crop, exact 256x64px, Upto 20KB."
@@ -1308,8 +1283,8 @@ export default function DocResizer() {
 
         <Widget
           widgetId="docResizer"
-          usageCount={toolUsage.docResizer || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('docResizer')}
           title="Document Resizer"
           description="image/PDF to PDF upto 98KB safely."
@@ -1324,8 +1299,8 @@ export default function DocResizer() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Widget
           widgetId="bgRemover"
-          usageCount={toolUsage.bgRemover || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('bgRemover')}
           title="AI Background Remover"
           description="Output as transparent PNG."
@@ -1340,8 +1315,8 @@ export default function DocResizer() {
 
         <Widget
           widgetId="passportMaker"
-          usageCount={toolUsage.passportMaker || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('passportMaker')}
           title="Passport Size Photo Maker"
           description="Exact 1:1 ratio, 600x600 px."
@@ -1359,8 +1334,8 @@ export default function DocResizer() {
 
         <PdfToImageWidget
           widgetId="pdfToImage"
-          usageCount={toolUsage.pdfToImage || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('pdfToImage')}
         />
       </div>
@@ -1368,8 +1343,8 @@ export default function DocResizer() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <IdCardMakerWidget
           widgetId="idCardMaker"
-          usageCount={toolUsage.idCardMaker || 0}
-          maxFreeLimit={1}
+          hasActiveTools={hasActiveTools}
+          remainingTrialDays={remainingTrialDays}
           onProcessSuccess={() => handleUsageIncrement('idCardMaker')}
         />
       </div>
